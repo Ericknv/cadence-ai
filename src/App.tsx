@@ -10,6 +10,7 @@ import {
 import { CockpitHeader } from './components/cockpit/CockpitHeader';
 import { CockpitTimeline } from './components/cockpit/CockpitTimeline';
 import { CreateTrackModal } from './components/modals/CreateTrackModal';
+import { RebalanceModal } from './components/modals/RebalanceModal';
 import {
   StudyTrack,
 } from './types/study';
@@ -21,6 +22,7 @@ import {
   MessageSquare,
   Sparkles,
   Zap,
+  Scale,
 } from 'lucide-react';
 
 export default function App() {
@@ -30,6 +32,7 @@ export default function App() {
   const [selectedDate, setSelectedDate] = useState<string>(TODAY_DATE);
   const [statusFilter, setStatusFilter] = useState<'all' | SessionStatus>('all');
   const [isCreateTrackOpen, setIsCreateTrackOpen] = useState<boolean>(false);
+  const [isRebalanceOpen, setIsRebalanceOpen] = useState<boolean>(false);
   const [successBanner, setSuccessBanner] = useState<string | null>(null);
 
   // Estado para modal de feedback pós-estudo (perceived_difficulty & notes)
@@ -98,6 +101,16 @@ export default function App() {
     }, 6000);
   };
 
+  const handleApplyRebalancedSchedule = (newBlocks: EnrichedScheduleBlock[]) => {
+    setBlocks(newBlocks);
+    setSuccessBanner(
+      `Cronograma semanal rebalanceado com sucesso! Carga redistribuída respeitando limites diários.`
+    );
+    setTimeout(() => {
+      setSuccessBanner(null);
+    }, 6000);
+  };
+
   const handleResetMock = () => {
     setBlocks(mockEnrichedScheduleBlocks);
     setSuccessBanner(null);
@@ -113,7 +126,7 @@ export default function App() {
     <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col font-sans selection:bg-blue-600 selection:text-white">
       {/* Top Main Container */}
       <main className="flex-1 max-w-5xl w-full mx-auto px-4 py-6 sm:px-6 sm:py-8 space-y-6">
-        {/* Banner de Sucesso pós-decomposição */}
+        {/* Banner de Sucesso pós-decomposição / rebalanceamento */}
         {successBanner && (
           <div className="rounded-lg bg-emerald-950/60 border border-emerald-600/60 p-3 sm:p-3.5 flex items-center justify-between gap-3 text-xs text-emerald-200 animate-in fade-in duration-300">
             <div className="flex items-center gap-2">
@@ -136,6 +149,7 @@ export default function App() {
           selectedDate={selectedDate}
           onResetMock={handleResetMock}
           onOpenCreateTrackModal={() => setIsCreateTrackOpen(true)}
+          onOpenRebalanceModal={() => setIsRebalanceOpen(true)}
         />
 
         {/* Toolbar de Filtro e Controles Rápidos */}
@@ -270,6 +284,14 @@ export default function App() {
         isOpen={isCreateTrackOpen}
         onClose={() => setIsCreateTrackOpen(false)}
         onTrackCreated={handleTrackCreated}
+      />
+
+      {/* Modal de Rebalanceamento Semanal & Proteção contra Burnout */}
+      <RebalanceModal
+        isOpen={isRebalanceOpen}
+        onClose={() => setIsRebalanceOpen(false)}
+        currentBlocks={blocks}
+        onApplyRebalancedSchedule={handleApplyRebalancedSchedule}
       />
 
       {/* Footer Técnico Minimalista */}

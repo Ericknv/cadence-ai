@@ -149,6 +149,141 @@ Gere a estrutura JSON estrita contendo 'track_title', 'overview' e o array de 's
     }
   });
 
+  // Endpoint de Rebalanceamento Semanal Inteligente (PCP & Proteção contra Burnout)
+  app.post('/api/rebalance', async (req: Request, res: Response) => {
+    try {
+      const { pendingSessions, daysCapacity } = req.body;
+
+      if (!pendingSessions || !Array.isArray(pendingSessions) || pendingSessions.length === 0) {
+        return res.status(400).json({ error: 'Lista de pendingSessions é obrigatória.' });
+      }
+
+      if (!daysCapacity || !Array.isArray(daysCapacity) || daysCapacity.length === 0) {
+        return res.status(400).json({ error: 'Configuração de daysCapacity é obrigatória.' });
+      }
+
+      const apiKey = process.env.GEMINI_API_KEY;
+      if (!apiKey) {
+        return res.status(500).json({
+          error:
+            'Chave GEMINI_API_KEY não configurada no servidor. Verifique o painel Settings > Secrets.',
+        });
+      }
+
+      const ai = new GoogleGenAI({
+        apiKey,
+        httpOptions: {
+          headers: {
+            'User-Agent': 'aistudio-build',
+          },
+        },
+      });
+
+      const systemInstruction = `Você é o Rebalancer Engine do StudyPilot (Cadence), atuando como Engenheiro Especialista em Planejamento e Controle da Produção (PCP) e Fatores Humanos.
+Sua missão é equilibrar a carga de estudos semanal de um engenheiro/profissional contra sua matriz real de disponibilidade de tempo, protegendo-o rigorosamente contra fadiga mental e burnout.
+
+Regras Estritas de Capacidade:
+1. NUNCA exceda o 'available_minutes' diário definido para cada data. Se a demanda de minutos superar a capacidade da semana, você DEVE postergar as sessões excedentes colocando os seus IDs em 'deferred_session_ids'.
+2. Priorização:
+   - Sessões em atraso ou com dependência de fundamentos devem ser alocadas primeiro.
+   - Sessões com 'cognitive_effort' = 'high' (Deep Work analítico) DEVEM ser alocadas preferencialmente no primeiro turno de estudo disponível do dia (ex: 'morning' ou turno preferido) e NUNCA coloque duas sessões 'high' no mesmo dia a menos que haja mais de 180 min disponíveis.
+   - Sessões 'practice' e 'review' podem ser distribuídas na tarde/noite ou em dias com menor capacidade.
+3. 'target_period' DEVE ser estritamente um dos seguintes: 'morning', 'afternoon', 'evening', 'night'.
+4. 'burnout_risk' DEVE ser estritamente: 'low', 'moderate' ou 'critical'.
+   - 'critical': se a taxa de ocupação da semana for > 90% ou houver dias sobrecarregados sem buffer de contingência.
+   - 'moderate': se a taxa estiver entre 70% e 90%.
+   - 'low': ocupação < 70% com distribuição balanceada de esforço cognitivo.
+5. 'diagnosis' deve ser uma avaliação técnica concisa e direta ao ponto (2 a 3 frases) em português, destacando gargalos e taxas de ocupação.
+6. 'justification' de cada bloco deve explicar o motivo técnico da alocação naquela data e período específico.`;
+
+      const prompt = `Matriz de Capacidade Semanal (Disponibilidade Diária):
+${JSON.stringify(daysCapacity, null, 2)}
+
+Sessões de Estudo Pendentes para Alocação:
+${JSON.stringify(pendingSessions, null, 2)}
+
+Gere o plano rebalanceado em JSON estrito.`;
+
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: prompt,
+        config: {
+          systemInstruction,
+          temperature: 0.2,
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              diagnosis: {
+                type: Type.STRING,
+                description: 'Diagnóstico executivo de viabilidade da semana e balanço de carga',
+              },
+              burnout_risk: {
+                type: Type.STRING,
+                description: 'Nível de risco de fadiga/burnout: low, moderate ou critical',
+              },
+              allocated_blocks: {
+                type: Type.ARRAY,
+                description: 'Lista de sessões alocadas nos dias e períodos permitidos',
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    session_id: {
+                      type: Type.STRING,
+                      description: 'ID da sessão de estudo alocada',
+                    },
+                    target_date: {
+                      type: Type.STRING,
+                      description: 'Data de agendamento no formato YYYY-MM-DD',
+                    },
+                    target_period: {
+                      type: Type.STRING,
+                      description: 'Período: morning, afternoon, evening ou night',
+                    },
+                    priority_rank: {
+                      type: Type.INTEGER,
+                      description: 'Classificação de prioridade de 1 a 5',
+                    },
+                    justification: {
+                      type: Type.STRING,
+                      description: 'Justificativa técnica da alocação de capacidade',
+                    },
+                  },
+                  required: [
+                    'session_id',
+                    'target_date',
+                    'target_period',
+                    'priority_rank',
+                    'justification',
+                  ],
+                },
+              },
+              deferred_session_ids: {
+                type: Type.ARRAY,
+                items: { type: Type.STRING },
+                description: 'IDs das sessões postergadas para a próxima sprint',
+              },
+            },
+            required: ['diagnosis', 'burnout_risk', 'allocated_blocks', 'deferred_session_ids'],
+          },
+        },
+      });
+
+      const responseText = response.text;
+      if (!responseText) {
+        throw new Error('Resposta vazia retornada pelo modelo Gemini.');
+      }
+
+      const parsedData = JSON.parse(responseText);
+      return res.status(200).json(parsedData);
+    } catch (err: unknown) {
+      console.error('[Gemini Rebalance Error]:', err);
+      const errorMessage =
+        err instanceof Error ? err.message : 'Erro ao rebalancear cronograma com Gemini';
+      return res.status(500).json({ error: errorMessage });
+    }
+  });
+
   // Configuração do Vite Middleware em desenvolvimento ou arquivos estáticos em produção
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({

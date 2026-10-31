@@ -8,6 +8,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Flame,
+  Scale,
 } from 'lucide-react';
 import { EnrichedScheduleBlock } from '../../types/study';
 
@@ -16,6 +17,7 @@ interface CockpitHeaderProps {
   selectedDate: string;
   onResetMock?: () => void;
   onOpenCreateTrackModal?: () => void;
+  onOpenRebalanceModal?: () => void;
   className?: string;
 }
 
@@ -24,6 +26,7 @@ export const CockpitHeader: React.FC<CockpitHeaderProps> = ({
   selectedDate,
   onResetMock,
   onOpenCreateTrackModal,
+  onOpenRebalanceModal,
   className = '',
 }) => {
   // Cálculos de Métricas em Tempo Real
@@ -117,6 +120,18 @@ export const CockpitHeader: React.FC<CockpitHeaderProps> = ({
               title="Restaurar estado original dos mocks"
             >
               Reset Mock
+            </button>
+          )}
+
+          {onOpenRebalanceModal && (
+            <button
+              type="button"
+              onClick={onOpenRebalanceModal}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-medium bg-indigo-600/90 hover:bg-indigo-500 text-white shadow-sm border border-indigo-500/80 transition-colors cursor-pointer"
+              title="Equilibrar cronograma semanal contra sua matriz de disponibilidade"
+            >
+              <Scale className="w-3.5 h-3.5" />
+              <span>Rebalancear Semana (IA)</span>
             </button>
           )}
 
