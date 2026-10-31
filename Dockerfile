@@ -10,7 +10,7 @@ RUN apk add --no-cache libc6-compat
 COPY package*.json bun.lock* ./
 
 # Instala dependências sem exigir o package-lock.json estrito
-RUN npm install
+RUN npm install --legacy-peer-deps
 
 COPY . .
 
