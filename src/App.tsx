@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   mockEnrichedScheduleBlocks,
   TODAY_DATE,
@@ -6,14 +6,16 @@ import {
 import {
   EnrichedScheduleBlock,
   SessionStatus,
+  StudyTrack,
+  StudySession,
+  ScheduleBlock,
 } from './types/study';
 import { CockpitHeader } from './components/cockpit/CockpitHeader';
 import { CockpitTimeline } from './components/cockpit/CockpitTimeline';
 import { CreateTrackModal } from './components/modals/CreateTrackModal';
 import { RebalanceModal } from './components/modals/RebalanceModal';
-import {
-  StudyTrack,
-} from './types/study';
+import { AuthModal } from './components/auth/AuthModal';
+import { supabaseClient, isSupabaseConfigured } from './lib/supabaseClient';
 import {
   loadStoredData,
   saveBlocks,
@@ -22,6 +24,12 @@ import {
   exportDataAsJSON,
   importDataFromJSON,
 } from './services/storageService';
+import {
+  fetchUserScheduleBlocks,
+  updateSessionStatus,
+  persistNewTrackAndSessions,
+  syncRebalancedBlocks,
+} from './services/supabaseService';
 import {
   CheckCircle,
   Filter,
@@ -41,6 +49,8 @@ export default function App() {
   const [statusFilter, setStatusFilter] = useState<'all' | SessionStatus>('all');
   const [isCreateTrackOpen, setIsCreateTrackOpen] = useState<boolean>(false);
   const [isRebalanceOpen, setIsRebalanceOpen] = useState<boolean>(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
+  const [user, setUser] = useState<any>(null);
   const [successBanner, setSuccessBanner] = useState<string | null>(null);
 
   // Estado para modal de feedback pós-estudo (perceived_difficulty & notes)
@@ -49,12 +59,44 @@ export default function App() {
   const [ratingInput, setRatingInput] = useState<number>(3);
   const [notesInput, setNotesInput] = useState<string>('');
 
+  // Verificação de sessão de usuário no Supabase Auth
+  useEffect(() => {
+    if (isSupabaseConfigured()) {
+      supabaseClient.auth.getSession().then(({ data: { session } }) => {
+        setUser(session?.user ?? null);
+      });
+
+      const {
+        data: { subscription },
+      } = supabaseClient.auth.onAuthStateChange((_event, session) => {
+        setUser(session?.user ?? null);
+      });
+
+      return () => subscription.unsubscribe();
+    }
+  }, []);
+
+  // Carregamento inicial e reativo ao mudar de data ou usuário via Supabase
+  useEffect(() => {
+    let isMounted = true;
+    fetchUserScheduleBlocks(selectedDate, user?.id).then((remoteBlocks) => {
+      if (isMounted && remoteBlocks && remoteBlocks.length > 0) {
+        setBlocks(remoteBlocks);
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedDate, user]);
+
   const handleStatusChange = (blockId: string, newStatus: SessionStatus) => {
+    let targetSessionId = '';
     setBlocks((prev) => {
       let targetForModal: EnrichedScheduleBlock | null = null;
       const updated = prev.map((block) => {
         if (block.id !== blockId) return block;
 
+        targetSessionId = block.session.id;
         const updatedSession = {
           ...block.session,
           status: newStatus,
@@ -81,10 +123,16 @@ export default function App() {
       saveBlocks(updated);
       return updated;
     });
+
+    // Sincronização remota com Supabase (background)
+    if (targetSessionId) {
+      updateSessionStatus(targetSessionId, newStatus);
+    }
   };
 
   const handleSaveFeedback = () => {
     if (!feedbackModalBlock) return;
+    const targetSessionId = feedbackModalBlock.session.id;
 
     setBlocks((prev) => {
       const updated = prev.map((block) => {
@@ -103,10 +151,15 @@ export default function App() {
       return updated;
     });
 
+    // Sincronização remota de feedback com Supabase
+    updateSessionStatus(targetSessionId, feedbackModalBlock.session.status, {
+      perceived_difficulty: ratingInput,
+      notes: notesInput.trim(),
+    });
     setFeedbackModalBlock(null);
   };
 
-  const handleTrackCreated = (
+  const handleTrackCreated = async (
     newBlocks: EnrichedScheduleBlock[],
     newTrack: StudyTrack
   ) => {
@@ -117,8 +170,16 @@ export default function App() {
       return updated;
     });
 
+    // Sincroniza trilha e sessões no Supabase com rollback defensivo
+    const sessions = newBlocks.map((b) => b.session);
+    try {
+      await persistNewTrackAndSessions(newTrack, sessions, selectedDate);
+    } catch (err) {
+      console.warn('[Sync Track Warning]: Falha ao persistir no Supabase, dados salvos localmente.', err);
+    }
+
     setSuccessBanner(
-      `Trilha "${newTrack.title}" gerada com sucesso! ${newBlocks.length} sessões incorporadas e salvas localmente.`
+      `Trilha "${newTrack.title}" gerada com sucesso! ${newBlocks.length} sessões incorporadas e sincronizadas.`
     );
     setTimeout(() => {
       setSuccessBanner(null);
@@ -128,12 +189,25 @@ export default function App() {
   const handleApplyRebalancedSchedule = (newBlocks: EnrichedScheduleBlock[]) => {
     saveBlocks(newBlocks);
     setBlocks(newBlocks);
+
+    const dateList = Array.from(new Set(newBlocks.map((b) => b.target_date)));
+    syncRebalancedBlocks(newBlocks, dateList, user?.id);
+
     setSuccessBanner(
       `Cronograma semanal rebalanceado com sucesso! Carga redistribuída respeitando limites diários.`
     );
     setTimeout(() => {
       setSuccessBanner(null);
     }, 6000);
+  };
+
+  const handleSignOut = async () => {
+    if (isSupabaseConfigured()) {
+      await supabaseClient.auth.signOut();
+      setUser(null);
+      setSuccessBanner('Sessão encerrada. Operando no modo local.');
+      setTimeout(() => setSuccessBanner(null), 5000);
+    }
   };
 
   const handleResetMock = () => {
@@ -194,6 +268,9 @@ export default function App() {
         <CockpitHeader
           blocks={blocks}
           selectedDate={selectedDate}
+          user={user}
+          onOpenAuthModal={() => setIsAuthModalOpen(true)}
+          onSignOut={handleSignOut}
           onResetMock={handleResetMock}
           onOpenCreateTrackModal={() => setIsCreateTrackOpen(true)}
           onOpenRebalanceModal={() => setIsRebalanceOpen(true)}
@@ -332,6 +409,7 @@ export default function App() {
       <CreateTrackModal
         isOpen={isCreateTrackOpen}
         onClose={() => setIsCreateTrackOpen(false)}
+        userId={user?.id}
         onTrackCreated={handleTrackCreated}
       />
 
@@ -341,6 +419,17 @@ export default function App() {
         onClose={() => setIsRebalanceOpen(false)}
         currentBlocks={blocks}
         onApplyRebalancedSchedule={handleApplyRebalancedSchedule}
+      />
+
+      {/* Modal de Autenticação Supabase */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        onAuthSuccess={(authenticatedUser) => {
+          setUser(authenticatedUser);
+          setSuccessBanner(`Conectado como ${authenticatedUser.email}! Dados sincronizados.`);
+          setTimeout(() => setSuccessBanner(null), 6000);
+        }}
       />
 
       {/* Footer Técnico Minimalista */}

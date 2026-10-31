@@ -25,6 +25,7 @@ import { TODAY_DATE } from '../../mocks/study-data';
 interface CreateTrackModalProps {
   isOpen: boolean;
   onClose: () => void;
+  userId?: string;
   onTrackCreated: (newBlocks: EnrichedScheduleBlock[], newTrack: StudyTrack) => void;
 }
 
@@ -69,6 +70,7 @@ const PRESET_TEMPLATES = [
 export const CreateTrackModal: React.FC<CreateTrackModalProps> = ({
   isOpen,
   onClose,
+  userId = 'usr_erick_nava',
   onTrackCreated,
 }) => {
   const [rawText, setRawText] = useState<string>('');
@@ -98,7 +100,7 @@ export const CreateTrackModal: React.FC<CreateTrackModalProps> = ({
 
       const newTrack: StudyTrack = {
         id: trackId,
-        user_id: 'usr_erick_nava',
+        user_id: userId,
         title: result.track_title,
         category,
         overview: result.overview,
@@ -117,7 +119,7 @@ export const CreateTrackModal: React.FC<CreateTrackModalProps> = ({
         const studySession: StudySession = {
           id: sessionId,
           track_id: trackId,
-          user_id: 'usr_erick_nava',
+          user_id: userId,
           sequence_order: idx + 1,
           title: sess.title,
           session_type: sess.session_type,
