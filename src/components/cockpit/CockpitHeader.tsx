@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef } from 'react';
 import {
   Calendar,
   Brain,
@@ -9,6 +9,11 @@ import {
   ChevronRight,
   Flame,
   Scale,
+  Database,
+  Download,
+  Upload,
+  RotateCcw,
+  ChevronDown,
 } from 'lucide-react';
 import { EnrichedScheduleBlock } from '../../types/study';
 
@@ -18,6 +23,8 @@ interface CockpitHeaderProps {
   onResetMock?: () => void;
   onOpenCreateTrackModal?: () => void;
   onOpenRebalanceModal?: () => void;
+  onExportBackup?: () => void;
+  onImportBackup?: (fileContent: string) => void;
   className?: string;
 }
 
@@ -27,8 +34,12 @@ export const CockpitHeader: React.FC<CockpitHeaderProps> = ({
   onResetMock,
   onOpenCreateTrackModal,
   onOpenRebalanceModal,
+  onExportBackup,
+  onImportBackup,
   className = '',
 }) => {
+  const [isDataMenuOpen, setIsDataMenuOpen] = useState<boolean>(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   // Cálculos de Métricas em Tempo Real
   const totalPlannedMinutes = blocks.reduce(
     (acc, b) => acc + (b.session?.estimated_duration_min || 0),
@@ -112,16 +123,80 @@ export const CockpitHeader: React.FC<CockpitHeaderProps> = ({
             </button>
           </div>
 
-          {onResetMock && (
+          {/* Menu de Dados & Backup */}
+          <div className="relative">
+            <input
+              type="file"
+              ref={fileInputRef}
+              accept=".json"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file && onImportBackup) {
+                  const reader = new FileReader();
+                  reader.onload = (event) => {
+                    const content = event.target?.result as string;
+                    if (content) onImportBackup(content);
+                  };
+                  reader.readAsText(file);
+                }
+                if (e.target) e.target.value = '';
+                setIsDataMenuOpen(false);
+              }}
+            />
             <button
               type="button"
-              onClick={onResetMock}
-              className="px-2.5 py-1.5 rounded-lg text-xs font-mono bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 border border-zinc-800 transition-colors cursor-pointer"
-              title="Restaurar estado original dos mocks"
+              onClick={() => setIsDataMenuOpen(!isDataMenuOpen)}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-mono bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-800 transition-colors cursor-pointer"
+              title="Gerenciamento de Dados e Backup Local"
             >
-              Reset Mock
+              <Database className="w-3.5 h-3.5 text-zinc-400" />
+              <span>Dados</span>
+              <ChevronDown className="w-3 h-3 text-zinc-500" />
             </button>
-          )}
+
+            {isDataMenuOpen && (
+              <div className="absolute right-0 mt-1.5 w-52 rounded-lg bg-zinc-900 border border-zinc-750 shadow-xl z-30 py-1 font-mono text-xs animate-in fade-in duration-150">
+                {onExportBackup && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onExportBackup();
+                      setIsDataMenuOpen(false);
+                    }}
+                    className="w-full text-left px-3 py-2 text-zinc-300 hover:text-white hover:bg-zinc-800 flex items-center gap-2 cursor-pointer transition-colors"
+                  >
+                    <Download className="w-3.5 h-3.5 text-blue-400" />
+                    <span>Exportar Backup (JSON)</span>
+                  </button>
+                )}
+                {onImportBackup && (
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full text-left px-3 py-2 text-zinc-300 hover:text-white hover:bg-zinc-800 flex items-center gap-2 cursor-pointer transition-colors"
+                  >
+                    <Upload className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>Restaurar Backup</span>
+                  </button>
+                )}
+                <div className="my-1 border-t border-zinc-800" />
+                {onResetMock && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onResetMock();
+                      setIsDataMenuOpen(false);
+                    }}
+                    className="w-full text-left px-3 py-2 text-rose-300 hover:text-rose-200 hover:bg-rose-950/40 flex items-center gap-2 cursor-pointer transition-colors"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5 text-rose-400" />
+                    <span>Limpar / Reset Mock</span>
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
 
           {onOpenRebalanceModal && (
             <button

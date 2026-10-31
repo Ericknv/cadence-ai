@@ -15,6 +15,14 @@ import {
   StudyTrack,
 } from './types/study';
 import {
+  loadStoredData,
+  saveBlocks,
+  saveTrack,
+  resetToDefaultMock,
+  exportDataAsJSON,
+  importDataFromJSON,
+} from './services/storageService';
+import {
   CheckCircle,
   Filter,
   X,
@@ -27,7 +35,7 @@ import {
 
 export default function App() {
   const [blocks, setBlocks] = useState<EnrichedScheduleBlock[]>(
-    mockEnrichedScheduleBlocks
+    () => loadStoredData().blocks
   );
   const [selectedDate, setSelectedDate] = useState<string>(TODAY_DATE);
   const [statusFilter, setStatusFilter] = useState<'all' | SessionStatus>('all');
@@ -42,8 +50,9 @@ export default function App() {
   const [notesInput, setNotesInput] = useState<string>('');
 
   const handleStatusChange = (blockId: string, newStatus: SessionStatus) => {
-    setBlocks((prev) =>
-      prev.map((block) => {
+    setBlocks((prev) => {
+      let targetForModal: EnrichedScheduleBlock | null = null;
+      const updated = prev.map((block) => {
         if (block.id !== blockId) return block;
 
         const updatedSession = {
@@ -56,23 +65,29 @@ export default function App() {
           session: updatedSession,
         };
 
-        // Se marcou como concluído, abre opcionalmente o modal de feedback
         if (newStatus === 'completed') {
-          setFeedbackModalBlock(updatedBlock);
-          setRatingInput(updatedSession.perceived_difficulty || 3);
-          setNotesInput(updatedSession.notes || '');
+          targetForModal = updatedBlock;
         }
 
         return updatedBlock;
-      })
-    );
+      });
+
+      if (targetForModal) {
+        setFeedbackModalBlock(targetForModal);
+        setRatingInput((targetForModal as EnrichedScheduleBlock).session.perceived_difficulty || 3);
+        setNotesInput((targetForModal as EnrichedScheduleBlock).session.notes || '');
+      }
+
+      saveBlocks(updated);
+      return updated;
+    });
   };
 
   const handleSaveFeedback = () => {
     if (!feedbackModalBlock) return;
 
-    setBlocks((prev) =>
-      prev.map((block) => {
+    setBlocks((prev) => {
+      const updated = prev.map((block) => {
         if (block.id !== feedbackModalBlock.id) return block;
         return {
           ...block,
@@ -82,8 +97,11 @@ export default function App() {
             notes: notesInput.trim(),
           },
         };
-      })
-    );
+      });
+
+      saveBlocks(updated);
+      return updated;
+    });
 
     setFeedbackModalBlock(null);
   };
@@ -92,9 +110,15 @@ export default function App() {
     newBlocks: EnrichedScheduleBlock[],
     newTrack: StudyTrack
   ) => {
-    setBlocks((prev) => [...newBlocks, ...prev]);
+    saveTrack(newTrack);
+    setBlocks((prev) => {
+      const updated = [...newBlocks, ...prev];
+      saveBlocks(updated);
+      return updated;
+    });
+
     setSuccessBanner(
-      `Trilha "${newTrack.title}" gerada com sucesso! ${newBlocks.length} sessões incorporadas ao plano.`
+      `Trilha "${newTrack.title}" gerada com sucesso! ${newBlocks.length} sessões incorporadas e salvas localmente.`
     );
     setTimeout(() => {
       setSuccessBanner(null);
@@ -102,6 +126,7 @@ export default function App() {
   };
 
   const handleApplyRebalancedSchedule = (newBlocks: EnrichedScheduleBlock[]) => {
+    saveBlocks(newBlocks);
     setBlocks(newBlocks);
     setSuccessBanner(
       `Cronograma semanal rebalanceado com sucesso! Carga redistribuída respeitando limites diários.`
@@ -112,8 +137,30 @@ export default function App() {
   };
 
   const handleResetMock = () => {
-    setBlocks(mockEnrichedScheduleBlocks);
-    setSuccessBanner(null);
+    const { blocks: defaultBlocks } = resetToDefaultMock();
+    setBlocks(defaultBlocks);
+    setSuccessBanner('Armazenamento local limpo e restaurado para os mocks padrão.');
+    setTimeout(() => {
+      setSuccessBanner(null);
+    }, 6000);
+  };
+
+  const handleImportBackup = (fileContent: string) => {
+    try {
+      const { blocks: importedBlocks } = importDataFromJSON(fileContent);
+      setBlocks(importedBlocks);
+      setSuccessBanner(
+        `Backup restaurado com sucesso! ${importedBlocks.length} blocos carregados e sincronizados.`
+      );
+      setTimeout(() => {
+        setSuccessBanner(null);
+      }, 6000);
+    } catch (err: unknown) {
+      console.error(err);
+      setSuccessBanner(
+        err instanceof Error ? `Erro: ${err.message}` : 'Falha ao restaurar arquivo de backup'
+      );
+    }
   };
 
   // Filtragem visual dos blocos
@@ -126,7 +173,7 @@ export default function App() {
     <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col font-sans selection:bg-blue-600 selection:text-white">
       {/* Top Main Container */}
       <main className="flex-1 max-w-5xl w-full mx-auto px-4 py-6 sm:px-6 sm:py-8 space-y-6">
-        {/* Banner de Sucesso pós-decomposição / rebalanceamento */}
+        {/* Banner de Sucesso pós-decomposição / rebalanceamento / backup */}
         {successBanner && (
           <div className="rounded-lg bg-emerald-950/60 border border-emerald-600/60 p-3 sm:p-3.5 flex items-center justify-between gap-3 text-xs text-emerald-200 animate-in fade-in duration-300">
             <div className="flex items-center gap-2">
@@ -150,6 +197,8 @@ export default function App() {
           onResetMock={handleResetMock}
           onOpenCreateTrackModal={() => setIsCreateTrackOpen(true)}
           onOpenRebalanceModal={() => setIsRebalanceOpen(true)}
+          onExportBackup={exportDataAsJSON}
+          onImportBackup={handleImportBackup}
         />
 
         {/* Toolbar de Filtro e Controles Rápidos */}
