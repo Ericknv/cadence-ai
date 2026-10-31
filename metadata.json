@@ -1,0 +1,6 @@
+{
+  "name": "StudyPilot (Cadence)",
+  "description": "App de organização e rotina de estudos para estudantes de engenharia e profissionais com rotinas concorrentes.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
