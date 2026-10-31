@@ -10,6 +10,49 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Modelo centralizado de IA (migrado para gemini-3.8-flash)
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
+
+/**
+ * Utilitário defensivo de resiliência: executa chamadas ao Gemini com até 3 tentativas
+ * e backoff exponencial em caso de instabilidade transitória (503 / 429 / alta demanda).
+ */
+async function generateWithRetry(
+  ai: GoogleGenAI,
+  params: Parameters<typeof ai.models.generateContent>[0],
+  maxRetries = 3
+) {
+  let attempt = 0;
+  while (attempt < maxRetries) {
+    try {
+      return await ai.models.generateContent(params);
+    } catch (error: any) {
+      attempt++;
+      const errorMsg = (error?.message || error?.toString() || '').toLowerCase();
+      const status = error?.status || error?.statusCode || error?.code;
+      const isTransient =
+        status === 503 ||
+        status === 429 ||
+        errorMsg.includes('high demand') ||
+        errorMsg.includes('503') ||
+        errorMsg.includes('temporarily unavailable') ||
+        errorMsg.includes('resource_exhausted') ||
+        errorMsg.includes('overloaded');
+
+      if (attempt >= maxRetries || !isTransient) {
+        throw error;
+      }
+
+      const delayMs = attempt * 1500; // 1.5s, 3.0s
+      console.warn(
+        `[Gemini Resilience] Tentativa ${attempt}/${maxRetries} falhou com erro transitório (${error?.message}). Aguardando ${delayMs}ms antes de retentar...`
+      );
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+  }
+  throw new Error('Falha após múltiplas tentativas de retry com o Gemini.');
+}
+
 async function startServer() {
   const app = express();
   const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
@@ -65,12 +108,11 @@ ${rawText}
 
 Gere a estrutura JSON estrita contendo 'track_title', 'overview' e o array de 'sessions'.`;
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+      const response = await generateWithRetry(ai, {
+        model: GEMINI_MODEL,
         contents: prompt,
         config: {
           systemInstruction,
-          temperature: 0.2,
           responseMimeType: 'application/json',
           responseSchema: {
             type: Type.OBJECT,
@@ -145,6 +187,20 @@ Gere a estrutura JSON estrita contendo 'track_title', 'overview' e o array de 's
       console.error('[Gemini Decomposer Error]:', err);
       const errorMessage =
         err instanceof Error ? err.message : 'Erro ao decompor trilha com Gemini';
+
+      const isHighDemand =
+        errorMessage.toLowerCase().includes('high demand') ||
+        errorMessage.toLowerCase().includes('503') ||
+        errorMessage.toLowerCase().includes('temporarily unavailable') ||
+        errorMessage.toLowerCase().includes('resource_exhausted');
+
+      if (isHighDemand) {
+        return res.status(503).json({
+          error:
+            'A IA está com alta demanda momentânea nos servidores da Google. Tentando novamente em instantes...',
+        });
+      }
+
       return res.status(500).json({ error: errorMessage });
     }
   });
@@ -204,12 +260,11 @@ ${JSON.stringify(pendingSessions, null, 2)}
 
 Gere o plano rebalanceado em JSON estrito.`;
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+      const response = await generateWithRetry(ai, {
+        model: GEMINI_MODEL,
         contents: prompt,
         config: {
           systemInstruction,
-          temperature: 0.2,
           responseMimeType: 'application/json',
           responseSchema: {
             type: Type.OBJECT,
@@ -280,6 +335,20 @@ Gere o plano rebalanceado em JSON estrito.`;
       console.error('[Gemini Rebalance Error]:', err);
       const errorMessage =
         err instanceof Error ? err.message : 'Erro ao rebalancear cronograma com Gemini';
+
+      const isHighDemand =
+        errorMessage.toLowerCase().includes('high demand') ||
+        errorMessage.toLowerCase().includes('503') ||
+        errorMessage.toLowerCase().includes('temporarily unavailable') ||
+        errorMessage.toLowerCase().includes('resource_exhausted');
+
+      if (isHighDemand) {
+        return res.status(503).json({
+          error:
+            'A IA está com alta demanda momentânea nos servidores da Google. Tentando novamente em instantes...',
+        });
+      }
+
       return res.status(500).json({ error: errorMessage });
     }
   });

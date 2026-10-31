@@ -153,10 +153,25 @@ export const RebalanceModal: React.FC<RebalanceModalProps> = ({
       const result = await rebalanceSchedule(pending, days);
       setRebalanceResult(result);
     } catch (err: unknown) {
-      console.error(err);
-      setErrorMessage(
-        err instanceof Error ? err.message : 'Falha inesperada ao executar rebalanceamento.'
-      );
+      console.error('[RebalanceModal Error]:', err);
+      const rawMsg = err instanceof Error ? err.message : '';
+      const isHighDemand =
+        rawMsg.toLowerCase().includes('high demand') ||
+        rawMsg.toLowerCase().includes('alta demanda') ||
+        rawMsg.toLowerCase().includes('503') ||
+        rawMsg.toLowerCase().includes('unavailable') ||
+        rawMsg.toLowerCase().includes('resource_exhausted') ||
+        rawMsg.toLowerCase().includes('overloaded');
+
+      if (isHighDemand) {
+        setErrorMessage(
+          'A IA está com alta demanda momentânea nos servidores da Google. Tentando novamente em instantes...'
+        );
+      } else {
+        setErrorMessage(
+          rawMsg || 'Falha inesperada ao executar rebalanceamento.'
+        );
+      }
     } finally {
       setIsLoading(false);
     }
@@ -248,7 +263,7 @@ export const RebalanceModal: React.FC<RebalanceModalProps> = ({
               <h2 className="text-base font-semibold text-zinc-100 flex items-center gap-2">
                 Rebalanceador Semanal & Proteção contra Burnout
                 <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-indigo-950/80 text-indigo-300 border border-indigo-800">
-                  PCP Engine • Gemini 2.5
+                  PCP Engine • Gemini 3.8
                 </span>
               </h2>
               <p className="text-xs text-zinc-400">

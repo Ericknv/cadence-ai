@@ -165,10 +165,25 @@ export const CreateTrackModal: React.FC<CreateTrackModalProps> = ({
       onTrackCreated(createdBlocks, newTrack);
       onClose();
     } catch (err: unknown) {
-      console.error(err);
-      setErrorMessage(
-        err instanceof Error ? err.message : 'Falha inesperada ao comunicar com o Gemini Decomposer'
-      );
+      console.error('[CreateTrackModal Error]:', err);
+      const rawMsg = err instanceof Error ? err.message : '';
+      const isHighDemand =
+        rawMsg.toLowerCase().includes('high demand') ||
+        rawMsg.toLowerCase().includes('alta demanda') ||
+        rawMsg.toLowerCase().includes('503') ||
+        rawMsg.toLowerCase().includes('unavailable') ||
+        rawMsg.toLowerCase().includes('resource_exhausted') ||
+        rawMsg.toLowerCase().includes('overloaded');
+
+      if (isHighDemand) {
+        setErrorMessage(
+          'A IA está com alta demanda momentânea nos servidores da Google. Tentando novamente em instantes...'
+        );
+      } else {
+        setErrorMessage(
+          rawMsg || 'Falha inesperada ao comunicar com o Gemini Decomposer'
+        );
+      }
     } finally {
       setIsLoading(false);
     }
@@ -193,7 +208,7 @@ export const CreateTrackModal: React.FC<CreateTrackModalProps> = ({
               <h2 className="text-base font-semibold text-zinc-100 flex items-center gap-2">
                 Decomposer Engine
                 <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-blue-950/80 text-blue-300 border border-blue-800">
-                  Gemini 2.5 Flash
+                  Gemini 3.8 Flash
                 </span>
               </h2>
               <p className="text-xs text-zinc-400">
@@ -346,7 +361,7 @@ export const CreateTrackModal: React.FC<CreateTrackModalProps> = ({
               <div className="flex items-center gap-2.5 text-blue-300 text-xs font-mono">
                 <Loader2 className="w-4 h-4 animate-spin text-blue-400" />
                 <span className="font-semibold">
-                  Decomposer Engine em execução via Gemini 2.5 Flash...
+                  Decomposer Engine em execução via Gemini 3.8 Flash...
                 </span>
               </div>
               <p className="text-[11px] text-zinc-400 font-sans leading-relaxed">
