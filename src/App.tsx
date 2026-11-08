@@ -1,17 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import {
-  mockEnrichedScheduleBlocks,
   TODAY_DATE,
 } from './mocks/study-data';
 import {
   EnrichedScheduleBlock,
   SessionStatus,
   StudyTrack,
-  StudySession,
-  ScheduleBlock,
 } from './types/study';
 import { CockpitHeader } from './components/cockpit/CockpitHeader';
-import { CockpitTimeline } from './components/cockpit/CockpitTimeline';
+import { TabNavigation, NavTabId } from './components/layout/TabNavigation';
+import { TodayTab } from './components/tabs/TodayTab';
+import { TracksTab } from './components/tabs/TracksTab';
+import { PlannerTab } from './components/tabs/PlannerTab';
+import { InsightsTab } from './components/tabs/InsightsTab';
 import { CreateTrackModal } from './components/modals/CreateTrackModal';
 import { RebalanceModal } from './components/modals/RebalanceModal';
 import { AuthModal } from './components/auth/AuthModal';
@@ -32,21 +33,20 @@ import {
 } from './services/supabaseService';
 import {
   CheckCircle,
-  Filter,
   X,
-  Star,
   MessageSquare,
-  Sparkles,
   Zap,
-  Scale,
 } from 'lucide-react';
 
 export default function App() {
+  const [activeTab, setActiveTab] = useState<NavTabId>('today');
   const [blocks, setBlocks] = useState<EnrichedScheduleBlock[]>(
     () => loadStoredData().blocks
   );
+  const [tracks, setTracks] = useState<StudyTrack[]>(
+    () => loadStoredData().tracks
+  );
   const [selectedDate, setSelectedDate] = useState<string>(TODAY_DATE);
-  const [statusFilter, setStatusFilter] = useState<'all' | SessionStatus>('all');
   const [isCreateTrackOpen, setIsCreateTrackOpen] = useState<boolean>(false);
   const [isRebalanceOpen, setIsRebalanceOpen] = useState<boolean>(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
@@ -164,6 +164,7 @@ export default function App() {
     newTrack: StudyTrack
   ) => {
     saveTrack(newTrack);
+    setTracks((prev) => [newTrack, ...prev.filter((t) => t.id !== newTrack.id)]);
     setBlocks((prev) => {
       const updated = [...newBlocks, ...prev];
       saveBlocks(updated);
@@ -211,8 +212,9 @@ export default function App() {
   };
 
   const handleResetMock = () => {
-    const { blocks: defaultBlocks } = resetToDefaultMock();
+    const { blocks: defaultBlocks, tracks: defaultTracks } = resetToDefaultMock();
     setBlocks(defaultBlocks);
+    setTracks(defaultTracks);
     setSuccessBanner('Armazenamento local limpo e restaurado para os mocks padrão.');
     setTimeout(() => {
       setSuccessBanner(null);
@@ -221,8 +223,11 @@ export default function App() {
 
   const handleImportBackup = (fileContent: string) => {
     try {
-      const { blocks: importedBlocks } = importDataFromJSON(fileContent);
+      const { blocks: importedBlocks, tracks: importedTracks } = importDataFromJSON(fileContent);
       setBlocks(importedBlocks);
+      if (importedTracks && importedTracks.length > 0) {
+        setTracks(importedTracks);
+      }
       setSuccessBanner(
         `Backup restaurado com sucesso! ${importedBlocks.length} blocos carregados e sincronizados.`
       );
@@ -236,12 +241,6 @@ export default function App() {
       );
     }
   };
-
-  // Filtragem visual dos blocos
-  const filteredBlocks =
-    statusFilter === 'all'
-      ? blocks
-      : blocks.filter((b) => b.session.status === statusFilter);
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col font-sans selection:bg-blue-600 selection:text-white">
@@ -278,49 +277,45 @@ export default function App() {
           onImportBackup={handleImportBackup}
         />
 
-        {/* Toolbar de Filtro e Controles Rápidos */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-          <div className="flex items-center gap-1.5 bg-zinc-900 p-1 rounded-lg border border-zinc-800 text-xs font-mono">
-            <span className="px-2 py-1 text-zinc-500 flex items-center gap-1">
-              <Filter className="w-3 h-3" />
-              Filtrar:
-            </span>
-            {(
-              [
-                { key: 'all', label: 'Todos' },
-                { key: 'in_progress', label: 'Em Andamento' },
-                { key: 'todo', label: 'Pendentes' },
-                { key: 'completed', label: 'Concluídos' },
-              ] as const
-            ).map((tab) => (
-              <button
-                key={tab.key}
-                type="button"
-                onClick={() => setStatusFilter(tab.key)}
-                className={`px-2.5 py-1 rounded transition-colors cursor-pointer ${
-                  statusFilter === tab.key
-                    ? 'bg-zinc-800 text-white font-semibold shadow-xs'
-                    : 'text-zinc-400 hover:text-zinc-200'
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-
-          <div className="text-xs font-mono text-zinc-500">
-            {filteredBlocks.length} de {blocks.length} blocos visualizados
-          </div>
-        </div>
-
-        {/* Timeline do Cockpit Diário */}
-        <CockpitTimeline
-          blocks={filteredBlocks}
-          onStatusChange={handleStatusChange}
+        {/* Barra de Navegação Modular em 4 Abas Estritas */}
+        <TabNavigation
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
         />
+
+        {/* Renderização Condicional da Aba Ativa */}
+        <div className="pt-2">
+          {activeTab === 'today' && (
+            <TodayTab
+              blocks={blocks}
+              onStatusChange={handleStatusChange}
+            />
+          )}
+
+          {activeTab === 'tracks' && (
+            <TracksTab
+              tracks={tracks}
+              blocks={blocks}
+              onOpenCreateTrackModal={() => setIsCreateTrackOpen(true)}
+            />
+          )}
+
+          {activeTab === 'planner' && (
+            <PlannerTab
+              blocks={blocks}
+              onOpenRebalanceModal={() => setIsRebalanceOpen(true)}
+            />
+          )}
+
+          {activeTab === 'insights' && (
+            <InsightsTab
+              blocks={blocks}
+            />
+          )}
+        </div>
       </main>
 
-      {/* Modal / Sheet de Feedback Pós-Estudo */}
+      {/* Modal de Feedback Pós-Estudo */}
       {feedbackModalBlock && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
           <div className="bg-zinc-900 border border-zinc-750 rounded-xl max-w-md w-full p-5 space-y-4 shadow-2xl">
