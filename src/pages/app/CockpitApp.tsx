@@ -27,7 +27,10 @@ import {
 } from '../../services/storageService';
 import {
   fetchUserScheduleBlocks,
+  fetchUserTracks,
   updateSessionStatus,
+  updateTrackDetails,
+  deleteTrackAndSessions,
   persistNewTrackAndSessions,
   syncRebalancedBlocks,
 } from '../../services/supabaseService';
@@ -61,15 +64,18 @@ const SEGMENT_BY_TAB: Record<CockpitTab, string> = {
 export default function CockpitApp() {
   const { tab: tabSegment } = useParams<{ tab: string }>();
   const navigate = useNavigate();
-  const { user, setUser, signOut } = useAuth();
+  const { user, isDemo, setUser, signOut } = useAuth();
   const activeTab: CockpitTab | undefined = tabSegment ? TAB_BY_SEGMENT[tabSegment] : undefined;
   const setActiveTab = (tab: CockpitTab) => navigate(`/app/${SEGMENT_BY_TAB[tab]}`);
-  const [blocks, setBlocks] = useState<EnrichedScheduleBlock[]>(
-    () => loadStoredData().blocks
-  );
-  const [tracks, setTracks] = useState<StudyTrack[]>(
-    () => loadStoredData().tracks
-  );
+
+  // ISOLAMENTO ESTRITO: se usuário autenticado, nunca inicia com mocks!
+  const [blocks, setBlocks] = useState<EnrichedScheduleBlock[]>(() => {
+    return loadStoredData(user?.id, isDemo).blocks;
+  });
+  const [tracks, setTracks] = useState<StudyTrack[]>(() => {
+    return loadStoredData(user?.id, isDemo).tracks;
+  });
+
   const [selectedDate, setSelectedDate] = useState<string>(TODAY_DATE);
   const [isCreateTrackOpen, setIsCreateTrackOpen] = useState<boolean>(false);
   const [isRebalanceOpen, setIsRebalanceOpen] = useState<boolean>(false);
@@ -82,18 +88,31 @@ export default function CockpitApp() {
   const [ratingInput, setRatingInput] = useState<number>(3);
   const [notesInput, setNotesInput] = useState<string>('');
 
-  // Carregamento inicial e reativo ao mudar de data ou usuário via Supabase
+  // Carregamento de dados com isolamento estrito
   useEffect(() => {
     let isMounted = true;
-    fetchUserScheduleBlocks(selectedDate, user?.id).then((remoteBlocks) => {
-      if (isMounted && remoteBlocks && remoteBlocks.length > 0) {
+
+    if (user?.id) {
+      // Usuário real autenticado: busca no Supabase
+      Promise.all([
+        fetchUserScheduleBlocks(selectedDate, user.id),
+        fetchUserTracks(user.id),
+      ]).then(([remoteBlocks, remoteTracks]) => {
+        if (!isMounted) return;
         setBlocks(remoteBlocks);
-      }
-    });
+        setTracks(remoteTracks);
+      });
+    } else {
+      // Modo demonstração (visitante)
+      const demoData = loadStoredData(undefined, true);
+      setBlocks(demoData.blocks);
+      setTracks(demoData.tracks);
+    }
+
     return () => {
       isMounted = false;
     };
-  }, [selectedDate, user]);
+  }, [selectedDate, user?.id, isDemo]);
 
   const handleStatusChange = (blockId: string, newStatus: SessionStatus) => {
     let targetSessionId = '';
@@ -126,11 +145,10 @@ export default function CockpitApp() {
         setNotesInput((targetForModal as EnrichedScheduleBlock).session.notes || '');
       }
 
-      saveBlocks(updated);
+      saveBlocks(updated, user?.id);
       return updated;
     });
 
-    // Sincronização remota com Supabase (background)
     if (targetSessionId) {
       updateSessionStatus(targetSessionId, newStatus);
     }
@@ -153,11 +171,10 @@ export default function CockpitApp() {
         };
       });
 
-      saveBlocks(updated);
+      saveBlocks(updated, user?.id);
       return updated;
     });
 
-    // Sincronização remota de feedback com Supabase
     updateSessionStatus(targetSessionId, feedbackModalBlock.session.status, {
       perceived_difficulty: ratingInput,
       notes: notesInput.trim(),
@@ -169,18 +186,17 @@ export default function CockpitApp() {
     newBlocks: EnrichedScheduleBlock[],
     newTrack: StudyTrack
   ) => {
-    saveTrack(newTrack);
+    saveTrack(newTrack, user?.id);
     setTracks((prev) => [newTrack, ...prev.filter((t) => t.id !== newTrack.id)]);
     setBlocks((prev) => {
       const updated = [...newBlocks, ...prev];
-      saveBlocks(updated);
+      saveBlocks(updated, user?.id);
       return updated;
     });
 
-    // Sincroniza trilha e sessões no Supabase com rollback defensivo
     const sessions = newBlocks.map((b) => b.session);
     try {
-      await persistNewTrackAndSessions(newTrack, sessions, selectedDate);
+      await persistNewTrackAndSessions(newTrack, sessions, selectedDate, user?.id);
     } catch (err) {
       console.warn('[Sync Track Warning]: Falha ao persistir no Supabase, dados salvos localmente.', err);
     }
@@ -193,8 +209,36 @@ export default function CockpitApp() {
     }, 6000);
   };
 
+  const handleUpdateTrack = async (updatedTrack: StudyTrack) => {
+    try {
+      await updateTrackDetails(updatedTrack, user?.id);
+      setTracks((prev) => prev.map((t) => (t.id === updatedTrack.id ? updatedTrack : t)));
+      setBlocks((prev) =>
+        prev.map((b) =>
+          b.track.id === updatedTrack.id ? { ...b, track: updatedTrack } : b
+        )
+      );
+      setSuccessBanner(`Trilha "${updatedTrack.title}" atualizada com sucesso.`);
+      setTimeout(() => setSuccessBanner(null), 5000);
+    } catch (err) {
+      console.error('Falha ao atualizar trilha:', err);
+    }
+  };
+
+  const handleDeleteTrack = async (trackId: string) => {
+    try {
+      await deleteTrackAndSessions(trackId, user?.id);
+      setTracks((prev) => prev.filter((t) => t.id !== trackId));
+      setBlocks((prev) => prev.filter((b) => b.track.id !== trackId));
+      setSuccessBanner('Trilha e sessões associadas excluídas com sucesso.');
+      setTimeout(() => setSuccessBanner(null), 5000);
+    } catch (err) {
+      console.error('Falha ao excluir trilha:', err);
+    }
+  };
+
   const handleApplyRebalancedSchedule = (newBlocks: EnrichedScheduleBlock[]) => {
-    saveBlocks(newBlocks);
+    saveBlocks(newBlocks, user?.id);
     setBlocks(newBlocks);
 
     const dateList = Array.from(new Set(newBlocks.map((b) => b.target_date)));
@@ -214,10 +258,10 @@ export default function CockpitApp() {
   };
 
   const handleResetMock = () => {
-    const { blocks: defaultBlocks, tracks: defaultTracks } = resetToDefaultMock();
+    const { blocks: defaultBlocks, tracks: defaultTracks } = resetToDefaultMock(user?.id);
     setBlocks(defaultBlocks);
     setTracks(defaultTracks);
-    setSuccessBanner('Armazenamento local limpo e restaurado para os mocks padrão.');
+    setSuccessBanner('Armazenamento local limpo e restaurado para os dados padrão.');
     setTimeout(() => {
       setSuccessBanner(null);
     }, 6000);
@@ -225,7 +269,7 @@ export default function CockpitApp() {
 
   const handleImportBackup = (fileContent: string) => {
     try {
-      const { blocks: importedBlocks, tracks: importedTracks } = importDataFromJSON(fileContent);
+      const { blocks: importedBlocks, tracks: importedTracks } = importDataFromJSON(fileContent, user?.id);
       setBlocks(importedBlocks);
       if (importedTracks && importedTracks.length > 0) {
         setTracks(importedTracks);
@@ -303,6 +347,7 @@ export default function CockpitApp() {
               blocks={blocks}
               tracks={tracks}
               onStatusChange={handleStatusChange}
+              onOpenCreateTrack={() => setIsCreateTrackOpen(true)}
             />
           )}
 
@@ -311,6 +356,8 @@ export default function CockpitApp() {
               tracks={tracks}
               blocks={blocks}
               onOpenCreateTrackModal={() => setIsCreateTrackOpen(true)}
+              onUpdateTrack={handleUpdateTrack}
+              onDeleteTrack={handleDeleteTrack}
             />
           )}
 
@@ -447,7 +494,7 @@ export default function CockpitApp() {
         <div className="flex flex-wrap items-center justify-center gap-4 text-slate-400">
           <button
             type="button"
-            onClick={exportDataAsJSON}
+            onClick={() => exportDataAsJSON(user?.id)}
             className="hover:text-slate-200 flex items-center gap-1 transition-colors cursor-pointer"
             title="Exportar backup completo das trilhas em JSON"
           >
@@ -485,7 +532,7 @@ export default function CockpitApp() {
             title="Resetar banco local para mocks padrão"
           >
             <RotateCcw className="w-3 h-3 text-slate-500" />
-            <span>Restaurar Mocks</span>
+            <span>Restaurar Dados</span>
           </button>
         </div>
         <div>

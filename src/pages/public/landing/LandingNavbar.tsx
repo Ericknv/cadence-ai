@@ -44,13 +44,13 @@ export const LandingNavbar: React.FC = () => {
 
         <div className="flex items-center gap-1.5">
           <Link
-            to="/login"
+            to="/login?mode=signin"
             className="hidden sm:inline-flex px-3.5 py-1.5 rounded-full text-xs font-medium text-[#E2E8F0] hover:bg-white/10 hover:shadow-[inset_0_0_14px_rgba(255,255,255,0.08)] transition-all"
           >
             Entrar
           </Link>
           <Link
-            to="/login"
+            to="/login?mode=signup"
             className="inline-flex px-4 py-2 rounded-full text-xs font-semibold text-[#E2E8F0] bg-[#0E1319] border border-[#88C0A8] shadow-[0_0_20px_rgba(136,192,168,0.2)] hover:shadow-[0_0_28px_rgba(136,192,168,0.35)] transition-shadow"
           >
             Iniciar Cadência
@@ -82,12 +82,18 @@ export const LandingNavbar: React.FC = () => {
                 </a>
               </li>
             ))}
-            <li className="sm:hidden">
+            <li className="sm:hidden border-t border-white/10 pt-2 mt-1">
               <Link
-                to="/login"
+                to="/login?mode=signin"
                 className="block px-4 py-3 rounded-2xl text-sm text-slate-300 hover:bg-white/5 hover:text-white transition-colors"
               >
                 Entrar
+              </Link>
+              <Link
+                to="/login?mode=signup"
+                className="block px-4 py-3 mt-1 rounded-2xl text-sm font-semibold text-[#88C0A8] bg-[#88C0A8]/10 hover:bg-[#88C0A8]/20 transition-colors text-center"
+              >
+                Iniciar Cadência
               </Link>
             </li>
           </ul>

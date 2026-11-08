@@ -8,22 +8,31 @@ import {
   TargetPeriod,
   PriorityRank,
 } from '../types/study';
-import { loadStoredData, saveBlocks, saveTrack } from './storageService';
+import {
+  loadStoredData,
+  saveBlocks,
+  saveTrack,
+  saveTracks,
+  deleteTrackLocal,
+} from './storageService';
 
 /**
  * Busca blocos de agendamento do usuário com joins relacionais aninhados:
  * schedule_blocks -> study_sessions -> study_tracks.
+ *
+ * REGRA RIGOROSA DE ISOLAMENTO:
+ * - Se `userId` for informado, NUNCA retorna mocks caso o banco esteja vazio!
  */
 export async function fetchUserScheduleBlocks(
   targetDate: string,
   userId?: string
 ): Promise<EnrichedScheduleBlock[]> {
   if (!isSupabaseConfigured()) {
-    return loadStoredData().blocks;
+    return loadStoredData(userId).blocks;
   }
 
   try {
-    // Tentativa 1: Query relacional aninhada padrão do PostgREST
+    // Consulta relacional aninhada
     let query = supabaseClient
       .from('schedule_blocks')
       .select(
@@ -80,8 +89,11 @@ export async function fetchUserScheduleBlocks(
     }
 
     if (!data || data.length === 0) {
-      const local = loadStoredData();
-      return local.blocks;
+      // Se for usuário real e o banco não tiver blocos nessa data:
+      if (userId) {
+        return loadStoredData(userId).blocks; // Retorna o cache do usuário (ou [])
+      }
+      return loadStoredData().blocks;
     }
 
     // Mapear resultado relacional aninhado
@@ -112,20 +124,16 @@ export async function fetchUserScheduleBlocks(
       });
     }
 
-    if (enriched.length > 0) {
-      saveBlocks(enriched);
-      return enriched;
-    }
-
-    return loadStoredData().blocks;
+    saveBlocks(enriched, userId);
+    return enriched;
   } catch (err) {
     console.error('[Supabase Fetch Error]:', err);
-    return loadStoredData().blocks;
+    return loadStoredData(userId).blocks;
   }
 }
 
 /**
- * Fallback resiliente para busca manual por chaves primárias/estrangeiras
+ * Fallback resiliente para busca manual por chaves primárias/estrangeiras.
  */
 async function fetchUserScheduleBlocksManual(
   targetDate: string,
@@ -136,21 +144,21 @@ async function fetchUserScheduleBlocksManual(
     if (userId) query = query.eq('user_id', userId);
 
     const { data: blocks, error: bErr } = await query;
-    if (bErr || !blocks || blocks.length === 0) return loadStoredData().blocks;
+    if (bErr || !blocks || blocks.length === 0) return loadStoredData(userId).blocks;
 
     const sessionIds = blocks.map((b) => b.session_id);
     const { data: sessions, error: sErr } = await supabaseClient
       .from('study_sessions')
       .select('*')
       .in('id', sessionIds);
-    if (sErr || !sessions) return loadStoredData().blocks;
+    if (sErr || !sessions) return loadStoredData(userId).blocks;
 
     const trackIds = Array.from(new Set(sessions.map((s) => s.track_id)));
     const { data: tracks, error: tErr } = await supabaseClient
       .from('study_tracks')
       .select('*')
       .in('id', trackIds);
-    if (tErr || !tracks) return loadStoredData().blocks;
+    if (tErr || !tracks) return loadStoredData(userId).blocks;
 
     const enriched: EnrichedScheduleBlock[] = blocks.map((b) => {
       const session = sessions.find((s) => s.id === b.session_id) as StudySession;
@@ -162,11 +170,42 @@ async function fetchUserScheduleBlocksManual(
       };
     });
 
-    saveBlocks(enriched);
+    saveBlocks(enriched, userId);
     return enriched;
   } catch (err) {
     console.error('[Supabase Manual Fetch Error]:', err);
-    return loadStoredData().blocks;
+    return loadStoredData(userId).blocks;
+  }
+}
+
+/**
+ * Busca todas as trilhas cadastradas do usuário.
+ * Retorna estritamente [] caso o usuário real não possua trilhas.
+ */
+export async function fetchUserTracks(userId?: string): Promise<StudyTrack[]> {
+  if (!isSupabaseConfigured() || !userId) {
+    return loadStoredData(userId).tracks;
+  }
+
+  try {
+    const { data, error } = await supabaseClient
+      .from('study_tracks')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('is_archived', false)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.warn('[Supabase fetchUserTracks Error]:', error.message);
+      return loadStoredData(userId).tracks;
+    }
+
+    const tracks = (data || []) as StudyTrack[];
+    saveTracks(tracks, userId);
+    return tracks;
+  } catch (err) {
+    console.error('[Supabase fetchUserTracks Exception]:', err);
+    return loadStoredData(userId).tracks;
   }
 }
 
@@ -201,18 +240,82 @@ export async function updateSessionStatus(
 }
 
 /**
+ * Atualiza detalhes de uma trilha (título, categoria, overview, cor).
+ */
+export async function updateTrackDetails(
+  track: StudyTrack,
+  userId?: string
+): Promise<void> {
+  saveTrack(track, userId);
+
+  if (!isSupabaseConfigured()) return;
+
+  try {
+    const { error } = await supabaseClient
+      .from('study_tracks')
+      .update({
+        title: track.title,
+        category: track.category,
+        overview: track.overview,
+        color_hex: track.color_hex,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', track.id);
+
+    if (error) throw error;
+  } catch (err) {
+    console.error('[Supabase updateTrackDetails Error]:', err);
+    throw err;
+  }
+}
+
+/**
+ * Exclui uma trilha e todas as suas sessões e blocos atômicos em cascata.
+ */
+export async function deleteTrackAndSessions(
+  trackId: string,
+  userId?: string
+): Promise<void> {
+  deleteTrackLocal(trackId, userId);
+
+  if (!isSupabaseConfigured()) return;
+
+  try {
+    // 1. Obter IDs das sessões vinculadas à trilha
+    const { data: sessions } = await supabaseClient
+      .from('study_sessions')
+      .select('id')
+      .eq('track_id', trackId);
+
+    if (sessions && sessions.length > 0) {
+      const sessionIds = sessions.map((s) => s.id);
+      // 2. Deletar blocos que referenciam essas sessões
+      await supabaseClient.from('schedule_blocks').delete().in('session_id', sessionIds);
+      // 3. Deletar as sessões
+      await supabaseClient.from('study_sessions').delete().eq('track_id', trackId);
+    }
+
+    // 4. Deletar a trilha
+    const { error } = await supabaseClient.from('study_tracks').delete().eq('id', trackId);
+    if (error) throw error;
+  } catch (err) {
+    console.error('[Supabase deleteTrackAndSessions Error]:', err);
+    throw err;
+  }
+}
+
+/**
  * Persiste nova trilha, suas sessões e blocos com rollback defensivo.
  */
 export async function persistNewTrackAndSessions(
   track: StudyTrack,
   sessions: StudySession[],
-  targetDate: string
+  targetDate: string,
+  userId?: string
 ): Promise<EnrichedScheduleBlock[]> {
-  // Salva localmente primeiro (Offline-first)
-  saveTrack(track);
+  saveTrack(track, userId);
 
   if (!isSupabaseConfigured()) {
-    // Gera blocos locais
     return mapSessionsToLocalBlocks(track, sessions, targetDate);
   }
 
@@ -294,7 +397,6 @@ export async function persistNewTrackAndSessions(
   } catch (err: unknown) {
     console.error('[Supabase Transaction Error - Iniciando Rollback Defensivo]:', err);
 
-    // Rollback defensivo
     if (sessionsInserted) {
       await supabaseClient.from('study_sessions').delete().eq('track_id', track.id);
     }
@@ -314,12 +416,11 @@ export async function syncRebalancedBlocks(
   dateList: string[],
   userId?: string
 ): Promise<void> {
-  saveBlocks(allocatedBlocks);
+  saveBlocks(allocatedBlocks, userId);
 
   if (!isSupabaseConfigured() || dateList.length === 0) return;
 
   try {
-    // 1. Remover blocos não concluídos das datas alvo
     let deleteQuery = supabaseClient
       .from('schedule_blocks')
       .delete()
@@ -334,7 +435,6 @@ export async function syncRebalancedBlocks(
       console.warn('[Supabase Sync Rebalance Delete Warning]:', delErr.message);
     }
 
-    // 2. Inserir os novos blocos alocados
     const insertPayload = allocatedBlocks.map((b) => ({
       id: b.id,
       user_id: b.user_id,

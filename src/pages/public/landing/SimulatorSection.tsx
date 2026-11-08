@@ -32,6 +32,17 @@ export const SimulatorSection: React.FC = () => {
   const [complexidade, setComplexidade] = useState<Complexity>('Médio');
   const [step, setStep] = useState<Step>('inputs');
 
+  React.useEffect(() => {
+    const handlePreset = () => {
+      setHoras(4);
+      setTarefas(9);
+      setComplexidade('Alto');
+      setStep('diagnosis');
+    };
+    window.addEventListener('cadence:apply-preset-overload', handlePreset);
+    return () => window.removeEventListener('cadence:apply-preset-overload', handlePreset);
+  }, []);
+
   const diag = useMemo(
     () => calcularDiagnosticoCognitivo(horas, tarefas, complexidade),
     [horas, tarefas, complexidade]
@@ -215,7 +226,7 @@ export const SimulatorSection: React.FC = () => {
               </div>
 
               <Link
-                to="/login"
+                to="/login?mode=signup"
                 className="mt-6 md:mt-auto md:pt-0 inline-flex items-center justify-center gap-2 rounded-xl bg-[#88C0A8] hover:bg-[#9ad0b8] px-5 py-3.5 text-sm font-semibold text-[#06120D] shadow-[0_0_25px_rgba(136,192,168,0.25)] transition-colors"
               >
                 Automatizar com Cadence AI

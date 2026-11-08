@@ -130,7 +130,7 @@ export const HeroSection: React.FC = () => (
 
       <div className="mt-8 flex flex-col sm:flex-row items-center gap-3 animate-fade-up">
         <Link
-          to="/login"
+          to="/login?mode=signup"
           className="group inline-flex items-center gap-2 rounded-full bg-[#0E1319] border border-[#88C0A8] px-6 py-3 text-sm font-semibold text-[#E2E8F0] shadow-[0_0_25px_rgba(136,192,168,0.2)] hover:shadow-[0_0_45px_rgba(136,192,168,0.4)] transition-shadow"
         >
           Experimentar Gratuitamente

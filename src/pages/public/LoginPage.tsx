@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { AlertCircle, ArrowLeft, ArrowRight, CheckCircle2, Loader2, Lock, Mail } from 'lucide-react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { AlertCircle, ArrowLeft, ArrowRight, CheckCircle2, Loader2, Lock, Mail, UserPlus, LogIn } from 'lucide-react';
 import { CadenceLogo } from '../../components/brand/CadenceLogo';
 import { supabaseClient, isSupabaseConfigured } from '../../lib/supabaseClient';
 import { useAuth } from '../../lib/auth';
 
 type AuthMethod = 'magic' | 'password';
+type AuthMode = 'signin' | 'signup';
 
 interface FeedbackMessage {
   type: 'error' | 'success';
@@ -25,9 +26,12 @@ const GoogleIcon: React.FC = () => (
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { enterDemo } = useAuth();
   const configured = isSupabaseConfigured();
 
+  const initialMode: AuthMode = searchParams.get('mode') === 'signup' ? 'signup' : 'signin';
+  const [mode, setMode] = useState<AuthMode>(initialMode);
   const [method, setMethod] = useState<AuthMethod>('magic');
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
@@ -45,6 +49,12 @@ const LoginPage: React.FC = () => {
     text: 'Autenticação indisponível neste ambiente (Supabase não configurado). Use o Modo Demonstração.',
   };
 
+  const handleModeChange = (newMode: AuthMode) => {
+    setMode(newMode);
+    setMessage(null);
+    setSearchParams(newMode === 'signup' ? { mode: 'signup' } : {});
+  };
+
   const handleGoogle = async () => {
     if (!configured) {
       setMessage(missingConfigMessage);
@@ -54,7 +64,7 @@ const LoginPage: React.FC = () => {
     setMessage(null);
     const { error } = await supabaseClient.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${window.location.origin}/app` },
+      options: { redirectTo: `${window.location.origin}/app/today` },
     });
     if (error) {
       setMessage({ type: 'error', text: error.message });
@@ -77,17 +87,38 @@ const LoginPage: React.FC = () => {
       if (method === 'magic') {
         const { error } = await supabaseClient.auth.signInWithOtp({
           email: email.trim(),
-          options: { emailRedirectTo: `${window.location.origin}/app` },
+          options: { emailRedirectTo: `${window.location.origin}/app/today` },
         });
         if (error) throw error;
-        setMessage({ type: 'success', text: 'Magic Link enviado! Verifique sua caixa de entrada para acessar.' });
+        setMessage({
+          type: 'success',
+          text: mode === 'signup'
+            ? 'Link de ativação enviado! Acesse seu e-mail para validar a conta e entrar.'
+            : 'Magic Link enviado! Verifique sua caixa de entrada para acessar o cockpit.',
+        });
       } else {
-        const { error } = await supabaseClient.auth.signInWithPassword({
-          email: email.trim(),
-          password,
-        });
-        if (error) throw error;
-        // A sessão atualiza o AuthProvider e PublicOnlyRoute redireciona para /app.
+        if (mode === 'signup') {
+          const { data, error } = await supabaseClient.auth.signUp({
+            email: email.trim(),
+            password,
+            options: { emailRedirectTo: `${window.location.origin}/app/today` },
+          });
+          if (error) throw error;
+          if (data.session) {
+            setMessage({ type: 'success', text: 'Conta criada e autenticada com sucesso!' });
+          } else {
+            setMessage({
+              type: 'success',
+              text: 'Conta criada! Verifique o link de confirmação enviado ao seu e-mail.',
+            });
+          }
+        } else {
+          const { error } = await supabaseClient.auth.signInWithPassword({
+            email: email.trim(),
+            password,
+          });
+          if (error) throw error;
+        }
       }
     } catch (err: unknown) {
       setMessage({
@@ -109,7 +140,9 @@ const LoginPage: React.FC = () => {
       {/* Orbe difusa central com respiração de 8s */}
       <div
         className="absolute top-1/2 left-1/2 w-[560px] h-[560px] rounded-full pointer-events-none animate-orb-breathe blur-[110px]"
-        style={{ background: 'radial-gradient(circle, rgba(136,192,168,0.35) 0%, rgba(86,157,170,0.22) 45%, rgba(9,11,14,0) 70%)' }}
+        style={{
+          background: 'radial-gradient(circle, rgba(136,192,168,0.35) 0%, rgba(86,157,170,0.22) 45%, rgba(9,11,14,0) 70%)',
+        }}
         aria-hidden="true"
       />
 
@@ -122,14 +155,46 @@ const LoginPage: React.FC = () => {
       </Link>
 
       <div className="relative z-10 flex flex-col items-center w-full">
-        <Link to="/" className="mb-8" aria-label="Cadence AI">
+        <Link to="/" className="mb-6" aria-label="Cadence AI">
           <CadenceLogo size={36} subtitle="Cognitive Capacity Engineering" />
         </Link>
 
         <div className="w-full max-w-[420px] rounded-3xl border border-white/10 bg-[rgba(18,24,32,0.75)] backdrop-blur-3xl p-7 shadow-[0_30px_80px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.12)]">
-          <h1 className="font-display text-2xl font-bold tracking-tight text-[#E2E8F0]">Bem-vindo de volta.</h1>
+          {/* Toggle Dual: Acessar Conta vs Criar Nova Conta */}
+          <div className="grid grid-cols-2 p-1 mb-5 rounded-2xl bg-black/40 border border-white/10 font-mono text-xs">
+            <button
+              type="button"
+              onClick={() => handleModeChange('signin')}
+              className={`flex items-center justify-center gap-1.5 py-2 rounded-xl transition-all cursor-pointer font-medium ${
+                mode === 'signin'
+                  ? 'bg-white/15 text-white font-semibold shadow-xs'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <LogIn className="w-3.5 h-3.5" />
+              <span>Acessar Conta</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleModeChange('signup')}
+              className={`flex items-center justify-center gap-1.5 py-2 rounded-xl transition-all cursor-pointer font-medium ${
+                mode === 'signup'
+                  ? 'bg-[#88C0A8]/20 text-[#88C0A8] border border-[#88C0A8]/30 font-semibold shadow-xs'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <UserPlus className="w-3.5 h-3.5" />
+              <span>Criar Nova Conta</span>
+            </button>
+          </div>
+
+          <h1 className="font-display text-2xl font-bold tracking-tight text-[#E2E8F0]">
+            {mode === 'signup' ? 'Inicie sua cadência.' : 'Bem-vindo de volta.'}
+          </h1>
           <p className="mt-1.5 text-sm text-[#94A3B8] leading-relaxed">
-            Respire fundo e retome sua cadência.
+            {mode === 'signup'
+              ? 'Crie sua conta para proteger sua rotina contra a sobrecarga.'
+              : 'Respire fundo e retome sua cadência.'}
           </p>
 
           {message && (
@@ -157,7 +222,7 @@ const LoginPage: React.FC = () => {
             className="mt-6 w-full h-12 rounded-xl flex items-center justify-center gap-3 text-sm font-medium text-slate-100 bg-white/5 border border-white/10 hover:bg-white/10 hover:shadow-[inset_0_0_20px_rgba(255,255,255,0.06)] transition-all cursor-pointer disabled:opacity-60"
           >
             {isGoogleLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <GoogleIcon />}
-            Continuar com Google
+            {mode === 'signup' ? 'Cadastrar com Google' : 'Continuar com Google'}
           </button>
 
           <div className="my-5 flex items-center gap-3 text-[11px] font-mono text-slate-500">
@@ -170,7 +235,7 @@ const LoginPage: React.FC = () => {
             <div className="space-y-1.5">
               <label htmlFor="login-email" className="flex items-center gap-1.5 text-xs text-[#94A3B8]">
                 <Mail className="w-3.5 h-3.5" />
-                Seu E-mail Corporativo
+                Seu melhor e-mail
               </label>
               <input
                 id="login-email"
@@ -179,7 +244,7 @@ const LoginPage: React.FC = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 onBlur={() => setTouched(true)}
-                placeholder="seu.nome@empresa.com"
+                placeholder="seu.email@exemplo.com"
                 aria-invalid={showEmailError}
                 className={`w-full h-11 rounded-xl bg-black/30 border px-3.5 text-sm text-slate-100 placeholder:text-slate-600 focus:outline-none transition-colors ${
                   showEmailError
@@ -198,15 +263,16 @@ const LoginPage: React.FC = () => {
               <div className="space-y-1.5">
                 <label htmlFor="login-password" className="flex items-center gap-1.5 text-xs text-[#94A3B8]">
                   <Lock className="w-3.5 h-3.5" />
-                  Senha
+                  {mode === 'signup' ? 'Crie uma Senha (mín. 6 caracteres)' : 'Senha'}
                 </label>
                 <input
                   id="login-password"
                   type="password"
-                  autoComplete="current-password"
+                  autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
+                  minLength={6}
                   className="w-full h-11 rounded-xl bg-black/30 border border-white/10 px-3.5 text-sm text-slate-100 placeholder:text-slate-600 focus:outline-none focus:border-[#88C0A8]/60 transition-colors"
                 />
               </div>
@@ -221,7 +287,9 @@ const LoginPage: React.FC = () => {
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
                 <>
-                  {method === 'magic' ? 'Enviar Magic Link' : 'Entrar'}
+                  {method === 'magic'
+                    ? (mode === 'signup' ? 'Criar Conta com Magic Link' : 'Enviar Magic Link')
+                    : (mode === 'signup' ? 'Criar Conta' : 'Entrar')}
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}
@@ -235,7 +303,7 @@ const LoginPage: React.FC = () => {
               }}
               className="w-full text-center text-[11px] font-mono text-slate-500 hover:text-slate-300 transition-colors cursor-pointer"
             >
-              {method === 'magic' ? 'Prefere usar senha?' : 'Prefere receber um Magic Link?'}
+              {method === 'magic' ? 'Prefere autenticar com senha?' : 'Prefere receber um Magic Link por e-mail?'}
             </button>
           </form>
 
@@ -249,7 +317,7 @@ const LoginPage: React.FC = () => {
         </div>
 
         <p className="mt-6 max-w-[320px] text-center text-[11px] text-slate-500 leading-relaxed">
-          Ao continuar, você aceita os Termos e Políticas do Cadence.
+          Ao continuar, você aceita os Termos e Políticas de Privacidade do Cadence AI.
         </p>
       </div>
     </div>

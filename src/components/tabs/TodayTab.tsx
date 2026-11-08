@@ -12,6 +12,7 @@ import {
   Activity,
   Layers,
   Filter,
+  Plus,
 } from 'lucide-react';
 import {
   EnrichedScheduleBlock,
@@ -25,12 +26,14 @@ interface TodayTabProps {
   blocks: EnrichedScheduleBlock[];
   tracks?: StudyTrack[];
   onStatusChange: (blockId: string, newStatus: SessionStatus) => void;
+  onOpenCreateTrack?: () => void;
   className?: string;
 }
 
 export const TodayTab: React.FC<TodayTabProps> = ({
   blocks,
   onStatusChange,
+  onOpenCreateTrack,
   className = '',
 }) => {
   const [statusFilter, setStatusFilter] = useState<'all' | SessionStatus>('all');
@@ -79,49 +82,80 @@ export const TodayTab: React.FC<TodayTabProps> = ({
       ? blocks
       : blocks.filter((b) => b.session?.status === statusFilter);
 
+  // EMPTY STATE REFINADO (Isolamento Estrito v1.2.1)
+  if (blocks.length === 0) {
+    return (
+      <div className={`space-y-6 ${className}`}>
+        <div className="rounded-3xl border border-white/10 bg-[#0E1319]/70 backdrop-blur-2xl p-8 sm:p-12 text-center space-y-4 shadow-[0_20px_50px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.08)]">
+          <div className="w-12 h-12 rounded-2xl bg-[#88C0A8]/10 border border-[#88C0A8]/30 flex items-center justify-center mx-auto text-[#88C0A8] shadow-[0_0_20px_rgba(136,192,168,0.2)]">
+            <Sparkles className="w-6 h-6" />
+          </div>
+          <div className="space-y-1.5 max-w-md mx-auto">
+            <h3 className="font-display text-lg font-bold text-slate-100">
+              Nenhuma trilha cadastrada
+            </h3>
+            <p className="text-xs text-slate-400 font-sans leading-relaxed">
+              Crie sua primeira disciplina para decompor ementas com IA e calcular sua cadência cognitiva com teto RCCP.
+            </p>
+          </div>
+          {onOpenCreateTrack && (
+            <button
+              type="button"
+              onClick={onOpenCreateTrack}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-mono text-xs font-bold bg-[#88C0A8] hover:bg-[#9ad0b8] text-slate-950 shadow-[0_0_25px_rgba(136,192,168,0.25)] transition-all cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Criar Primeira Trilha com IA</span>
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={`space-y-6 sm:space-y-8 ${className}`}>
-      {/* 1. Faixa de Telemetria de Capacidade (Glassmorphism Sóbrio) */}
+      {/* 1. Faixa de Telemetria de Capacidade (Refinamento de Dados & Tipografia Global) */}
       <section
         aria-label="Telemetria de Capacidade Diária"
-        className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 p-3 sm:p-4 rounded-2xl bg-[#090B0E]/70 backdrop-blur-xl border border-white/10 shadow-[0_10px_30px_rgba(0,0,0,0.5)]"
+        className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 p-3.5 sm:p-4 rounded-3xl bg-[#090B0E]/70 backdrop-blur-xl border border-white/10 shadow-[0_10px_30px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.05)]"
       >
-        <div className="p-2.5 rounded-xl bg-white/[0.02] border border-white/5 space-y-0.5">
+        <div className="p-3 rounded-2xl bg-white/[0.02] border border-white/5 space-y-1">
           <div className="text-[10px] font-mono uppercase tracking-wider text-slate-400">
             Carga Planejada
           </div>
-          <div className="text-base sm:text-lg font-mono font-bold text-slate-100">
+          <div className="text-xl sm:text-2xl font-display font-bold text-slate-100">
             {Math.round((totalPlannedMinutes / 60) * 10) / 10}h
-            <span className="text-[10px] text-slate-500 font-normal ml-1">
+            <span className="text-[11px] font-mono text-slate-500 font-normal ml-1">
               ({totalPlannedMinutes}m)
             </span>
           </div>
         </div>
 
-        <div className="p-2.5 rounded-xl bg-white/[0.02] border border-white/5 space-y-0.5">
+        <div className="p-3 rounded-2xl bg-white/[0.02] border border-white/5 space-y-1">
           <div className="text-[10px] font-mono uppercase tracking-wider text-slate-400">
             Aderência
           </div>
-          <div className="text-base sm:text-lg font-mono font-bold text-emerald-400">
+          <div className="text-xl sm:text-2xl font-display font-bold text-[#88C0A8]">
             {adherencePct}%
           </div>
         </div>
 
-        <div className="p-2.5 rounded-xl bg-white/[0.02] border border-white/5 space-y-0.5">
+        <div className="p-3 rounded-2xl bg-white/[0.02] border border-white/5 space-y-1">
           <div className="text-[10px] font-mono uppercase tracking-wider text-slate-400 flex items-center gap-1">
             <span className="w-1.5 h-1.5 rounded-full bg-[#FB7185]" />
             Deep Work
           </div>
-          <div className="text-base sm:text-lg font-mono font-bold text-[#FB7185]">
+          <div className="text-xl sm:text-2xl font-display font-bold text-[#FB7185]">
             {deepWorkMinutes}m
           </div>
         </div>
 
-        <div className="p-2.5 rounded-xl bg-white/[0.02] border border-white/5 space-y-0.5">
+        <div className="p-3 rounded-2xl bg-white/[0.02] border border-white/5 space-y-1">
           <div className="text-[10px] font-mono uppercase tracking-wider text-slate-400">
             Tempo Restante
           </div>
-          <div className="text-base sm:text-lg font-mono font-bold text-slate-200">
+          <div className="text-xl sm:text-2xl font-display font-bold text-slate-200">
             {remainingMinutes}m
           </div>
         </div>
@@ -131,7 +165,7 @@ export const TodayTab: React.FC<TodayTabProps> = ({
       {activeBlock && (
         <section
           aria-labelledby="executive-focus-title"
-          className="relative rounded-3xl border border-white/10 bg-gradient-to-b from-white/[0.05] via-white/[0.02] to-transparent backdrop-blur-2xl p-6 sm:p-8 shadow-[0_25px_60px_rgba(0,0,0,0.7)] space-y-5 overflow-hidden transition-all duration-300"
+          className="relative rounded-3xl border border-white/10 bg-gradient-to-b from-white/[0.05] via-white/[0.02] to-transparent backdrop-blur-2xl p-6 sm:p-8 shadow-[0_25px_60px_rgba(0,0,0,0.7),inset_0_1px_0_rgba(255,255,255,0.08)] space-y-5 overflow-hidden transition-all duration-300"
         >
           {/* Luz de acento sutil no topo do card */}
           <div className="absolute top-0 left-1/4 right-1/4 h-[1px] bg-gradient-to-r from-transparent via-emerald-400/40 to-transparent pointer-events-none" />
