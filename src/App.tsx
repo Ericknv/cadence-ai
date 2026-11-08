@@ -7,8 +7,7 @@ import {
   SessionStatus,
   StudyTrack,
 } from './types/study';
-import { CockpitHeader } from './components/cockpit/CockpitHeader';
-import { TabNavigation, NavTabId } from './components/layout/TabNavigation';
+import { TopFloatingDock } from './components/navigation/TopFloatingDock';
 import { TodayTab } from './components/tabs/TodayTab';
 import { TracksTab } from './components/tabs/TracksTab';
 import { PlannerTab } from './components/tabs/PlannerTab';
@@ -36,10 +35,13 @@ import {
   X,
   MessageSquare,
   Zap,
+  Download,
+  Upload,
+  RotateCcw,
 } from 'lucide-react';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<NavTabId>('today');
+  const [activeTab, setActiveTab] = useState<'today' | 'tracks' | 'planner' | 'insights'>('today');
   const [blocks, setBlocks] = useState<EnrichedScheduleBlock[]>(
     () => loadStoredData().blocks
   );
@@ -180,7 +182,7 @@ export default function App() {
     }
 
     setSuccessBanner(
-      `Trilha "${newTrack.title}" gerada com sucesso! ${newBlocks.length} sessões incorporadas e sincronizadas.`
+      `Trilha "${newTrack.title}" gerada com sucesso! ${newBlocks.length} sessões incorporadas.`
     );
     setTimeout(() => {
       setSuccessBanner(null);
@@ -242,13 +244,40 @@ export default function App() {
     }
   };
 
+  // Cálculo de RCCP (Rough-Cut Capacity Planning) da semana/dia
+  const totalPlannedMin = blocks.reduce(
+    (acc, b) => acc + (b.session?.estimated_duration_min || 0),
+    0
+  );
+  const completedMin = blocks
+    .filter((b) => b.session?.status === 'completed')
+    .reduce((acc, b) => acc + (b.session?.estimated_duration_min || 0), 0);
+  const rccpRate =
+    totalPlannedMin > 0
+      ? Math.min(100, Math.round((completedMin / totalPlannedMin) * 100))
+      : 88;
+
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col font-sans selection:bg-blue-600 selection:text-white">
-      {/* Top Main Container */}
-      <main className="flex-1 max-w-5xl w-full mx-auto px-4 py-6 sm:px-6 sm:py-8 space-y-6">
-        {/* Banner de Sucesso pós-decomposição / rebalanceamento / backup */}
+    <div className="min-h-screen bg-[#090B0E] text-slate-100 flex flex-col font-sans selection:bg-emerald-500 selection:text-black relative overflow-x-hidden">
+      {/* Glow Orbs Difusos de Fundo (Física da Luz - Dark Liquid Slate) */}
+      <div className="fixed -top-40 -left-40 w-96 h-96 bg-sky-500/5 blur-[140px] rounded-full pointer-events-none z-0" />
+      <div className="fixed -bottom-40 -right-40 w-96 h-96 bg-emerald-500/5 blur-[160px] rounded-full pointer-events-none z-0" />
+
+      {/* Navegação em Floating Dock Centralizado */}
+      <TopFloatingDock
+        activeTab={activeTab}
+        onSelectTab={setActiveTab}
+        rccpPercentage={rccpRate}
+        user={user}
+        onOpenAuthModal={() => setIsAuthModalOpen(true)}
+        onSignOut={handleSignOut}
+      />
+
+      {/* Container Principal */}
+      <main className="flex-1 max-w-5xl w-full mx-auto px-4 pt-24 pb-12 sm:px-6 space-y-6 relative z-10">
+        {/* Banner de Sucesso / Feedback Transitório */}
         {successBanner && (
-          <div className="rounded-lg bg-emerald-950/60 border border-emerald-600/60 p-3 sm:p-3.5 flex items-center justify-between gap-3 text-xs text-emerald-200 animate-in fade-in duration-300">
+          <div className="rounded-2xl bg-emerald-950/40 border border-emerald-500/30 p-3 sm:p-3.5 flex items-center justify-between gap-3 text-xs text-emerald-200 backdrop-blur-xl animate-in fade-in duration-300">
             <div className="flex items-center gap-2">
               <Zap className="w-4 h-4 text-emerald-400 shrink-0" />
               <span className="font-medium font-mono">{successBanner}</span>
@@ -263,31 +292,12 @@ export default function App() {
           </div>
         )}
 
-        {/* Cockpit Header com KPIs Operacionais */}
-        <CockpitHeader
-          blocks={blocks}
-          selectedDate={selectedDate}
-          user={user}
-          onOpenAuthModal={() => setIsAuthModalOpen(true)}
-          onSignOut={handleSignOut}
-          onResetMock={handleResetMock}
-          onOpenCreateTrackModal={() => setIsCreateTrackOpen(true)}
-          onOpenRebalanceModal={() => setIsRebalanceOpen(true)}
-          onExportBackup={exportDataAsJSON}
-          onImportBackup={handleImportBackup}
-        />
-
-        {/* Barra de Navegação Modular em 4 Abas Estritas */}
-        <TabNavigation
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-        />
-
         {/* Renderização Condicional da Aba Ativa */}
         <div className="pt-2">
           {activeTab === 'today' && (
             <TodayTab
               blocks={blocks}
+              tracks={tracks}
               onStatusChange={handleStatusChange}
             />
           )}
@@ -303,6 +313,7 @@ export default function App() {
           {activeTab === 'planner' && (
             <PlannerTab
               blocks={blocks}
+              onApplyRebalancedSchedule={handleApplyRebalancedSchedule}
               onOpenRebalanceModal={() => setIsRebalanceOpen(true)}
             />
           )}
@@ -317,22 +328,22 @@ export default function App() {
 
       {/* Modal de Feedback Pós-Estudo */}
       {feedbackModalBlock && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
-          <div className="bg-zinc-900 border border-zinc-750 rounded-xl max-w-md w-full p-5 space-y-4 shadow-2xl">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+          <div className="bg-[#090B0E]/90 border border-white/10 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl backdrop-blur-2xl">
             <div className="flex items-start justify-between">
               <div>
-                <span className="inline-flex items-center gap-1 text-[11px] font-mono font-semibold text-emerald-400 uppercase tracking-wider bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-800/60 mb-1.5">
+                <span className="inline-flex items-center gap-1 text-[11px] font-mono font-semibold text-emerald-400 uppercase tracking-wider bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20 mb-2">
                   <CheckCircle className="w-3 h-3" />
                   Sessão Finalizada
                 </span>
-                <h3 className="text-sm font-semibold text-zinc-100">
+                <h3 className="text-sm font-semibold text-slate-100">
                   {feedbackModalBlock.session.title}
                 </h3>
               </div>
               <button
                 type="button"
                 onClick={() => setFeedbackModalBlock(null)}
-                className="text-zinc-500 hover:text-zinc-300 p-1"
+                className="text-slate-400 hover:text-slate-200 p-1"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -340,7 +351,7 @@ export default function App() {
 
             {/* Avaliação de Dificuldade Percebida (1 a 5) */}
             <div className="space-y-1.5">
-              <label className="text-xs font-mono text-zinc-300 flex items-center justify-between">
+              <label className="text-xs font-mono text-slate-300 flex items-center justify-between">
                 <span>Dificuldade Percebida (1: Trivial a 5: Extrema)</span>
                 <span className="font-bold text-amber-400">
                   Nível {ratingInput}/5
@@ -352,10 +363,10 @@ export default function App() {
                     key={lvl}
                     type="button"
                     onClick={() => setRatingInput(lvl)}
-                    className={`flex-1 py-1.5 rounded text-xs font-mono font-medium border transition-colors cursor-pointer ${
+                    className={`flex-1 py-1.5 rounded-xl text-xs font-mono font-medium border transition-colors cursor-pointer ${
                       ratingInput === lvl
                         ? 'bg-amber-500/20 text-amber-300 border-amber-500/80 shadow-xs'
-                        : 'bg-zinc-950 text-zinc-400 border-zinc-800 hover:border-zinc-700'
+                        : 'bg-white/5 text-slate-400 border-white/5 hover:border-white/15'
                     }`}
                   >
                     {lvl}
@@ -366,32 +377,32 @@ export default function App() {
 
             {/* Notas Pós-Estudo */}
             <div className="space-y-1.5">
-              <label className="text-xs font-mono text-zinc-300 flex items-center gap-1.5">
-                <MessageSquare className="w-3.5 h-3.5 text-zinc-400" />
+              <label className="text-xs font-mono text-slate-300 flex items-center gap-1.5">
+                <MessageSquare className="w-3.5 h-3.5 text-slate-400" />
                 <span>Notas / Dúvidas / Gaps Identificados</span>
               </label>
               <textarea
                 value={notesInput}
                 onChange={(e) => setNotesInput(e.target.value)}
-                placeholder="Ex: Rever cálculo de base viável e sensibilidade de preço sombra..."
+                placeholder="Ex: Rever dedução matricial de simplex e dualidade..."
                 rows={3}
-                className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-xs text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-blue-500 transition-colors font-mono"
+                className="w-full bg-black/40 border border-white/10 rounded-xl p-2.5 text-xs text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-emerald-500 transition-colors font-mono"
               />
             </div>
 
             {/* Botões do Modal */}
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-zinc-800">
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-white/10">
               <button
                 type="button"
                 onClick={() => setFeedbackModalBlock(null)}
-                className="px-3 py-1.5 rounded text-xs font-mono text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition-colors cursor-pointer"
+                className="px-3.5 py-1.5 rounded-full text-xs font-mono text-slate-400 hover:text-slate-200 hover:bg-white/5 transition-colors cursor-pointer"
               >
-                Pular Feedback
+                Pular
               </button>
               <button
                 type="button"
                 onClick={handleSaveFeedback}
-                className="px-3.5 py-1.5 rounded text-xs font-mono font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm transition-colors cursor-pointer"
+                className="px-4 py-2 rounded-full text-xs font-mono font-bold bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-md transition-colors cursor-pointer"
               >
                 Salvar Registro
               </button>
@@ -427,9 +438,55 @@ export default function App() {
         }}
       />
 
-      {/* Footer Técnico Minimalista */}
-      <footer className="border-t border-zinc-900 py-3 text-center text-[11px] font-mono text-zinc-600">
-        StudyPilot Cadence Engine • Modo Operacional • {TODAY_DATE}
+      {/* Footer Técnico Minimalista & Controles Discretos de Dados */}
+      <footer className="border-t border-white/5 py-6 px-4 text-center text-[11px] font-mono text-slate-500 space-y-2 relative z-10">
+        <div className="flex flex-wrap items-center justify-center gap-4 text-slate-400">
+          <button
+            type="button"
+            onClick={exportDataAsJSON}
+            className="hover:text-slate-200 flex items-center gap-1 transition-colors cursor-pointer"
+            title="Exportar backup completo das trilhas em JSON"
+          >
+            <Download className="w-3 h-3 text-slate-500" />
+            <span>Exportar Backup</span>
+          </button>
+          <span>•</span>
+          <label className="hover:text-slate-200 flex items-center gap-1 transition-colors cursor-pointer">
+            <Upload className="w-3 h-3 text-slate-500" />
+            <span>Restaurar Backup</span>
+            <input
+              type="file"
+              accept=".json"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                  const content = event.target?.result;
+                  if (typeof content === 'string') {
+                    handleImportBackup(content);
+                  }
+                };
+                reader.readAsText(file);
+                e.target.value = '';
+              }}
+            />
+          </label>
+          <span>•</span>
+          <button
+            type="button"
+            onClick={handleResetMock}
+            className="hover:text-slate-200 flex items-center gap-1 transition-colors cursor-pointer"
+            title="Resetar banco local para mocks padrão"
+          >
+            <RotateCcw className="w-3 h-3 text-slate-500" />
+            <span>Restaurar Mocks</span>
+          </button>
+        </div>
+        <div>
+          Cadence AI • Engenharia de Rotina & PCP Cognitivo • {TODAY_DATE}
+        </div>
       </footer>
     </div>
   );
