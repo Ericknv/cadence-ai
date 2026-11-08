@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import type { User } from '@supabase/supabase-js';
 import {
   X,
   Lock,
@@ -15,7 +16,7 @@ import { supabaseClient, isSupabaseConfigured } from '../../lib/supabaseClient';
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAuthSuccess: (user: any) => void;
+  onAuthSuccess: (user: User | null) => void;
 }
 
 export const AuthModal: React.FC<AuthModalProps> = ({

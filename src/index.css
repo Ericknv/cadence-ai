@@ -1,1 +1,88 @@
 @import "tailwindcss";
+
+@theme {
+  /* Paleta Dark Liquid Slate */
+  --color-cadence-dark: #090b0e;
+  --color-cadence-card: #0e1319;
+  --color-cadence-surface: #121820;
+  --color-cadence-border: rgba(255, 255, 255, 0.08);
+  --color-cadence-sage: #88c0a8;
+  --color-cadence-cyan: #569daa;
+  --color-cadence-titanium: #a0aec0;
+  --color-cadence-muted: #94a3b8;
+  --color-cadence-light: #e2e8f0;
+
+  /* Tipografia */
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  --font-serif: "Newsreader", Georgia, serif;
+
+  /* Sombras de luz */
+  --shadow-sage-glow: 0 0 25px rgba(136, 192, 168, 0.18);
+  --shadow-cyan-glow: 0 0 25px rgba(86, 157, 170, 0.18);
+  --shadow-glass-edge: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+
+  /* Desfoque de vidro */
+  --blur-glass-2xl: 24px;
+  --blur-glass-3xl: 32px;
+
+  /* Animações */
+  --animate-orb-breathe: orb-breathe 8s ease-in-out infinite;
+  --animate-float-slow: float-slow 7s ease-in-out infinite;
+  --animate-float-slower: float-slow 9s ease-in-out -3s infinite;
+  --animate-pulse-dot: pulse-dot 2.4s ease-in-out infinite;
+  --animate-fade-up: fade-up 0.6s ease-out both;
+}
+
+@keyframes orb-breathe {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.55; }
+  50% { transform: translate(-50%, -50%) scale(1.18); opacity: 0.9; }
+}
+
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes pulse-dot {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(136, 192, 168, 0.55); }
+  50% { box-shadow: 0 0 0 6px rgba(136, 192, 168, 0); }
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+html {
+  scroll-behavior: smooth;
+  background-color: #090b0e;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: #090b0e;
+  color: #e2e8f0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+/* Contorno translúcido para numerais monumentais */
+.text-outline {
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(255, 255, 255, 0.1);
+}
+
+.scrollbar-none {
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}

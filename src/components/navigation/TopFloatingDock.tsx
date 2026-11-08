@@ -1,11 +1,13 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
+import type { User } from '@supabase/supabase-js';
 import { CadenceLogo } from '../brand/CadenceLogo';
 
 interface TopFloatingDockProps {
   activeTab: 'today' | 'tracks' | 'planner' | 'insights';
   onSelectTab: (tab: 'today' | 'tracks' | 'planner' | 'insights') => void;
   rccpPercentage?: number;
-  user?: any;
+  user?: User | null;
   onOpenAuthModal?: () => void;
   onSignOut?: () => void;
 }
@@ -30,7 +32,9 @@ export const TopFloatingDock: React.FC<TopFloatingDockProps> = ({
       <nav className="flex items-center gap-2.5 sm:gap-4 px-3.5 py-2 bg-[#090B0E]/70 backdrop-blur-2xl border border-white/10 rounded-full shadow-[0_20px_50px_rgba(0,0,0,0.8)]">
         {/* Zona 1: Marca & Símbolo */}
         <div className="pr-2 sm:pr-3.5 border-r border-white/10 shrink-0">
-          <CadenceLogo size={26} showText={true} />
+          <Link to="/" aria-label="Voltar ao site institucional" className="block">
+            <CadenceLogo size={26} showText={true} />
+          </Link>
         </div>
 
         {/* Zona 2: Abas Centrais em Pílula */}
