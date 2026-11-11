@@ -48,19 +48,22 @@ import {
 
 type CockpitTab = 'today' | 'tracks' | 'planner' | 'insights';
 
-/** Mapeamento entre segmentos de URL (/app/:tab) e as abas internas do cockpit. */
+/** Mapeamento entre segmentos de URL (/app/:tab) e as abas internas do cockpit (Calm System v2.0). */
 const TAB_BY_SEGMENT: Record<string, CockpitTab> = {
   today: 'today',
+  spaces: 'tracks',
   trails: 'tracks',
+  schedule: 'planner',
   planning: 'planner',
+  journey: 'insights',
   metrics: 'insights',
 };
 
 const SEGMENT_BY_TAB: Record<CockpitTab, string> = {
   today: 'today',
-  tracks: 'trails',
-  planner: 'planning',
-  insights: 'metrics',
+  tracks: 'spaces',
+  planner: 'schedule',
+  insights: 'journey',
 };
 
 export default function CockpitApp() {
@@ -317,7 +320,7 @@ export default function CockpitApp() {
     }
   };
 
-  // Cálculo de RCCP (Rough-Cut Capacity Planning) da semana/dia
+  // Cálculo da Harmonia da Semana (Taxa de Equilíbrio Sereno)
   const totalPlannedMin = blocks.reduce(
     (acc, b) => acc + (b.session?.estimated_duration_min || 0),
     0
@@ -325,7 +328,7 @@ export default function CockpitApp() {
   const completedMin = blocks
     .filter((b) => b.session?.status === 'completed')
     .reduce((acc, b) => acc + (b.session?.estimated_duration_min || 0), 0);
-  const rccpRate =
+  const harmonyRate =
     totalPlannedMin > 0
       ? Math.min(100, Math.round((completedMin / totalPlannedMin) * 100))
       : 88;
@@ -344,7 +347,7 @@ export default function CockpitApp() {
       <TopFloatingDock
         activeTab={activeTab}
         onSelectTab={setActiveTab}
-        rccpPercentage={rccpRate}
+        harmonyPercentage={harmonyRate}
         user={user}
         onOpenAuthModal={() => setIsAuthModalOpen(true)}
         onOpenProfile={() => setIsProfileOpen(true)}
@@ -593,7 +596,7 @@ export default function CockpitApp() {
           </Link>
         </div>
         <div>
-          Cadence AI • Engenharia de Rotina & PCP Cognitivo • {TODAY_DATE}
+          Cadence AI • Hub de Aprendizado Unificado & Clareza Mental • {TODAY_DATE}
         </div>
       </footer>
     </div>

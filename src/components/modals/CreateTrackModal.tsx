@@ -80,8 +80,8 @@ const PIPELINE_STEPS = [
     sub: 'Decomposição pedagógica sem fadiga decisória com metas atômicas',
   },
   {
-    label: 'Balanceando agenda semanal com teto RCCP...',
-    sub: 'Alocação rítmica nos turnos respeitando capacidade fisiológica',
+    label: 'Balanceando a harmonia semanal de aprendizagem...',
+    sub: 'Alocação rítmica nos turnos preservando clareza e bem-estar',
   },
 ];
 
@@ -306,7 +306,7 @@ export const CreateTrackModal: React.FC<CreateTrackModalProps> = ({
           </div>
 
           <div className="relative z-10 text-center font-mono text-[10px] text-slate-500 pt-2 border-t border-white/5">
-            Cadence AI · Rough-Cut Capacity Planning Engine
+            Cadence AI · Calm System Engine
           </div>
         </div>
       ) : (

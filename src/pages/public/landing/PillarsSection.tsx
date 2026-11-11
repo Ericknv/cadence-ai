@@ -27,17 +27,17 @@ const PillarPreview: React.FC<{ accent: string; bars: number[] }> = ({ accent, b
 const PILLARS: Pillar[] = [
   {
     index: '01',
-    title: 'Rough-Cut Capacity Planning',
-    accent: '#88C0A8',
+    title: 'Harmonia de Capacidade Real',
+    accent: '#7BDCB5',
     concept:
-      'A barreira matemática intransponível contra a sobrecarga: calculamos o limite fisiológico de horas úteis reais, em vez de aceitar itens infinitos.',
+      'A barreira acolhedora contra a sobrecarga: calculamos o limite biológico de foco real diário, protegendo sua mente contra a exaustão.',
     steps: [
-      'Leitura de compromissos fixos e rotina biológica.',
-      'Subtração de transição e descanso obrigatório.',
-      'Bandeira amarela aos 80% do limite; trava vermelha aos 100%.',
+      'Leitura de compromissos e rotina biológica.',
+      'Garantia de transições suaves e descanso prioritário.',
+      'Ajuste acolhedor aos 80% do limite, sem alarmes vermelhos de pânico.',
     ],
     cta: 'Ver Gráfico de Carga',
-    preview: <PillarPreview accent="#88C0A8" bars={[40, 55, 70, 80, 100, 60]} />,
+    preview: <PillarPreview accent="#7BDCB5" bars={[40, 55, 70, 80, 100, 60]} />,
   },
   {
     index: '02',
@@ -222,7 +222,7 @@ export const PillarsSection: React.FC = () => {
                   duration: '45m',
                   effort: 'Médio',
                   effortColor: 'text-sky-400 border-sky-500/30 bg-sky-500/10',
-                  goal: 'Formulação algébrica de função objetivo e restrições de capacidade fabril.',
+                  goal: 'Formulação clara de objetivos cognitivos e modelagem de equilíbrio da rotina.',
                 },
                 {
                   id: 2,
@@ -339,7 +339,7 @@ export const PillarsSection: React.FC = () => {
                 {/* Linha guia de teto diário */}
                 <line x1="0" y1="35" x2="500" y2="35" stroke="rgba(255,255,255,0.15)" strokeDasharray="4 4" />
                 <text x="10" y="30" fill="rgba(255,255,255,0.4)" fontSize="10" fontFamily="monospace">
-                  Teto Seguro RCCP (4.5h)
+                  Teto Seguro de Foco (4.5h)
                 </text>
 
                 {/* Curva de sobrecarga amortecida */}

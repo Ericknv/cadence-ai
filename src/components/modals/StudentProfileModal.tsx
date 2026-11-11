@@ -164,15 +164,15 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
             />
           </div>
 
-          {/* Parâmetros de Capacidade Fisiológica */}
+          {/* Parâmetros de Harmonia & Capacidade Biológica */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1">
               <label className="text-xs font-mono text-slate-300 flex items-center justify-between">
                 <span className="flex items-center gap-1">
-                  <Clock className="w-3 h-3 text-[#88C0A8]" />
-                  Teto Diário (RCCP)
+                  <Clock className="w-3 h-3 text-[#7BDCB5]" />
+                  Teto Diário de Clareza
                 </span>
-                <span className="text-[#88C0A8] font-bold">
+                <span className="text-[#7BDCB5] font-bold">
                   {(profile.dailyCapacityMinutes / 60).toFixed(1)}h
                 </span>
               </label>

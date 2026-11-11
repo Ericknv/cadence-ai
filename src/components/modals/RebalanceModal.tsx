@@ -263,11 +263,11 @@ export const RebalanceModal: React.FC<RebalanceModalProps> = ({
               <h2 className="text-base font-semibold text-zinc-100 flex items-center gap-2">
                 Rebalanceador Semanal & Proteção contra Burnout
                 <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-indigo-950/80 text-indigo-300 border border-indigo-800">
-                  PCP Engine • Gemini 3.8
+                  Harmonia Engine • Gemini 3.8
                 </span>
               </h2>
               <p className="text-xs text-zinc-400">
-                Ajuste fino de capacidade industrial para equilibrar rotinas concorrentes
+                Ajuste harmônico de capacidade e bem-estar para equilibrar seus blocos de foco
               </p>
             </div>
           </div>
@@ -445,7 +445,7 @@ export const RebalanceModal: React.FC<RebalanceModalProps> = ({
               {/* Diagnóstico Executivo da IA */}
               <div className="text-xs text-zinc-200 leading-relaxed font-sans bg-zinc-900/80 p-3 rounded-lg border border-zinc-800">
                 <span className="font-semibold text-indigo-300 font-mono mr-1.5">
-                  Diagnóstico PCP:
+                  Diagnóstico de Harmonia:
                 </span>
                 {rebalanceResult.diagnosis}
               </div>
@@ -516,7 +516,7 @@ export const RebalanceModal: React.FC<RebalanceModalProps> = ({
                 {isLoading ? (
                   <>
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    <span>Calculando Balanceamento PCP...</span>
+                    <span>Calculando Harmonia da Semana...</span>
                   </>
                 ) : (
                   <>

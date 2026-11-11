@@ -10,7 +10,7 @@ interface NavLinkItem {
 
 const NAV_LINKS: NavLinkItem[] = [
   { href: '#metodologia', label: 'Metodologia' },
-  { href: '#capacidade', label: 'Capacidade' },
+  { href: '#capacidade', label: 'Harmonia' },
   { href: '#simulador', label: 'Simulador' },
   { href: '#manifesto', label: 'Manifesto' },
 ];
@@ -51,7 +51,7 @@ export const LandingNavbar: React.FC = () => {
           </Link>
           <Link
             to="/login?mode=signup"
-            className="inline-flex px-4 py-2 rounded-full text-xs font-semibold text-[#E2E8F0] bg-[#0E1319] border border-[#88C0A8] shadow-[0_0_20px_rgba(136,192,168,0.2)] hover:shadow-[0_0_28px_rgba(136,192,168,0.35)] transition-shadow"
+            className="inline-flex px-4 py-2 rounded-full text-xs font-semibold text-[#E2E8F0] bg-[#0E1319] border border-[#7BDCB5]/60 shadow-[0_0_20px_rgba(123,220,181,0.2)] hover:shadow-[0_0_28px_rgba(123,220,181,0.35)] transition-shadow"
           >
             Iniciar Cadência
           </Link>

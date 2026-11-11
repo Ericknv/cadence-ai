@@ -88,14 +88,14 @@ export const InsightsTab: React.FC<InsightsTabProps> = ({
 
   return (
     <div className={`space-y-6 sm:space-y-8 ${className}`}>
-      {/* Cabeçalho Técnico */}
+      {/* Cabeçalho da Jornada */}
       <div className="pb-3 border-b border-white/5">
         <h2 className="text-base font-bold text-slate-100 font-display flex items-center gap-2">
-          <BarChart3 className="w-4 h-4 text-[#88C0A8]" />
-          Métricas de Desempenho & Fatores Humanos
+          <BarChart3 className="w-4 h-4 text-[#7BDCB5]" />
+          Jornada & Clareza Pessoal
         </h2>
-        <p className="text-xs text-slate-400 font-mono mt-0.5">
-          Diagnóstico de aderência da esteira, esforço cognitivo entregue e índice de fadiga percebida.
+        <p className="text-xs text-slate-400 font-sans mt-0.5">
+          Acompanhamento da harmonia de rotina, energia cognitiva e consistência pessoal.
         </p>
       </div>
 
@@ -104,10 +104,10 @@ export const InsightsTab: React.FC<InsightsTabProps> = ({
         {/* Aderência Global */}
         <div className="p-5 rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur-2xl shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)] space-y-1.5">
           <div className="text-[10px] font-mono text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-            <CheckCircle2 className="w-3.5 h-3.5 text-[#88C0A8]" />
-            Aderência Global
+            <CheckCircle2 className="w-3.5 h-3.5 text-[#7BDCB5]" />
+            Harmonia Global
           </div>
-          <div className="text-3xl font-display font-bold text-[#88C0A8]">
+          <div className="text-3xl font-display font-bold text-[#7BDCB5]">
             {adherenceRate}%
           </div>
           <div className="text-[11px] font-mono text-slate-500">
@@ -119,7 +119,7 @@ export const InsightsTab: React.FC<InsightsTabProps> = ({
         <div className="p-5 rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur-2xl shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)] space-y-1.5">
           <div className="text-[10px] font-mono text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
             <Clock className="w-3.5 h-3.5 text-sky-400" />
-            Carga Cumprida
+            Tempo Dedicado
           </div>
           <div className="text-3xl font-display font-bold text-slate-100">
             {Math.round((totalCompletedMinutes / 60) * 10) / 10}h
@@ -132,8 +132,8 @@ export const InsightsTab: React.FC<InsightsTabProps> = ({
         {/* Dificuldade Média */}
         <div className="p-5 rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur-2xl shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)] space-y-1.5">
           <div className="text-[10px] font-mono text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-            <Star className="w-3.5 h-3.5 text-amber-400" />
-            Dificuldade Média
+            <Star className="w-3.5 h-3.5 text-[#FDBA74]" />
+            Intensidade Média
           </div>
           <div className="text-3xl font-display font-bold text-slate-100">
             {avgDifficultyStr} <span className="text-sm text-slate-500 font-normal">/ 5.0</span>
@@ -146,8 +146,8 @@ export const InsightsTab: React.FC<InsightsTabProps> = ({
         {/* Saldo Operacional */}
         <div className="p-5 rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur-2xl shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)] space-y-1.5">
           <div className="text-[10px] font-mono text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-            <Activity className="w-3.5 h-3.5 text-[#569DAA]" />
-            Saldo Operacional
+            <Activity className="w-3.5 h-3.5 text-[#7DD3FC]" />
+            Balanço de Sessões
           </div>
           <div className="text-3xl font-display font-bold text-slate-100">
             {completedBlocks.length}{' '}
@@ -159,25 +159,24 @@ export const InsightsTab: React.FC<InsightsTabProps> = ({
         </div>
       </div>
 
-      {/* 2. Indicador de Fadiga & Alerta Preventivo de Burnout */}
+      {/* 2. Indicador de Ritmo & Equilíbrio Pessoal (Calm System v2.0 - Sem pânico vermelho) */}
       {isHighFatigue ? (
-        <div className="p-4 rounded-3xl border border-rose-500/30 bg-rose-950/20 text-xs font-mono text-rose-300 space-y-1.5 animate-in fade-in duration-200">
-          <div className="flex items-center gap-2 font-bold text-rose-300">
-            <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
-            <span>Alerta de Sobrecarga Mental: Dificuldade Média Crítica ({avgDifficultyStr}/5.0)</span>
+        <div className="p-4 rounded-3xl border border-[#FDBA74]/30 bg-[#FDBA74]/10 text-xs font-mono text-[#FDBA74] space-y-1.5 animate-in fade-in duration-200">
+          <div className="flex items-center gap-2 font-bold text-[#FDBA74]">
+            <AlertTriangle className="w-4 h-4 text-[#FDBA74] shrink-0" />
+            <span>Ponto de Respiro: Intensidade Percebida Alta ({avgDifficultyStr}/5.0)</span>
           </div>
-          <p className="text-rose-200/80 leading-relaxed font-sans text-xs">
-            As avaliações pós-estudo recentes indicam um nível de esforço mental substancialmente acima do limiar
-            sustentável. Acesse a aba <strong>Planejamento</strong> e aplique o rebalanceamento para proteger seu foco.
+          <p className="text-amber-100/80 leading-relaxed font-sans text-xs">
+            As avaliações pós-estudo recentes indicam um nível de esforço mental elevado. Acesse a aba <strong>Harmonia</strong> e redistribua os blocos para recuperar a serenidade.
           </p>
         </div>
       ) : (
         <div className="p-4 rounded-3xl border border-white/10 bg-white/[0.02] text-xs font-mono text-slate-400 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <ShieldCheck className="w-4 h-4 text-[#88C0A8] shrink-0" />
-            <span>Índice de Fadiga Estável: Carga balanceada dentro dos parâmetros fisiológicos do PCP.</span>
+            <ShieldCheck className="w-4 h-4 text-[#7BDCB5] shrink-0" />
+            <span>Índice de Serenidade Estável: Ritmo sustentável e equilíbrio biológico preservado.</span>
           </div>
-          <span className="text-[10px] text-slate-500 hidden sm:inline">Normal (&lt; 3.8/5.0)</span>
+          <span className="text-[10px] text-slate-500 hidden sm:inline">Equilíbrio Ótimo (&lt; 3.8/5.0)</span>
         </div>
       )}
 

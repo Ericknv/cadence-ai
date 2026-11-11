@@ -105,45 +105,44 @@ export const HeroSection: React.FC = () => (
     {/* Iluminação volumétrica de fundo */}
     <div
       className="absolute left-1/2 bottom-0 -translate-x-1/2 w-[1100px] h-[700px] pointer-events-none"
-      style={{ background: 'radial-gradient(circle, rgba(86,157,170,0.15) 0%, rgba(9,11,14,0) 70%)' }}
+      style={{ background: 'radial-gradient(circle, rgba(123,220,181,0.12) 0%, rgba(9,11,14,0) 70%)' }}
       aria-hidden="true"
     />
 
     <div className="relative max-w-5xl mx-auto flex flex-col items-center text-center">
-      <div className="inline-flex items-center gap-2 rounded-full border border-[#2A3644] bg-[#121820] px-3.5 py-1.5 font-mono text-[11px] text-[#88C0A8] animate-fade-up">
-        <span className="w-1.5 h-1.5 rounded-full bg-[#88C0A8] animate-pulse-dot" />
-        [ RCCP ENGINE // O FIM DAS LISTAS INFINITAS ]
+      <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3.5 py-1.5 font-mono text-[11px] text-[#7BDCB5] animate-fade-up">
+        <span className="w-1.5 h-1.5 rounded-full bg-[#7BDCB5] animate-pulse-dot" />
+        [ CALM SYSTEM // O FIM DO CAOS COGNITIVO ]
       </div>
 
-      <h1 className="mt-7 font-display font-bold text-[32px] sm:text-[44px] lg:text-[52px] leading-[1.05] tracking-tight text-[#E2E8F0] max-w-3xl animate-fade-up">
-        A mente humana não foi feita para <span className="text-[#4A5568]">listas infinitas</span>. Foi projetada para ter{' '}
-        <span className="bg-gradient-to-r from-[#88C0A8] to-[#4FD1E8] bg-clip-text text-transparent">
-          cadência
+      <h1 className="mt-7 font-display font-bold text-[32px] sm:text-[44px] lg:text-[54px] leading-[1.05] tracking-tight text-[#E2E8F0] max-w-3xl animate-fade-up">
+        Seu hub de aprendizado.{' '}
+        <span className="bg-gradient-to-r from-[#7BDCB5] via-[#86EFAC] to-[#BDB4FE] bg-clip-text text-transparent">
+          Sua mente em clareza
         </span>
         .
       </h1>
 
-      <p className="mt-6 max-w-[680px] text-base leading-[1.6] text-[#94A3B8] animate-fade-up">
-        Aplicamos o Rough-Cut Capacity Planning (PCP) — a mesma engenharia de capacidade usada na indústria de alta
-        precisão — para proteger a sua rotina cognitiva contra a sobrecarga e o burnout.
+      <p className="mt-6 max-w-[680px] text-base leading-[1.6] text-slate-400 font-sans animate-fade-up">
+        Reúna seus estudos, notas e rotina em um ambiente de vidro translúcido sem o ruído de mil abas abertas.
       </p>
 
       <div className="mt-8 flex flex-col sm:flex-row items-center gap-3 animate-fade-up">
         <Link
           to="/login?mode=signup"
-          className="group inline-flex items-center gap-2 rounded-full bg-[#0E1319] border border-[#88C0A8] px-6 py-3 text-sm font-semibold text-[#E2E8F0] shadow-[0_0_25px_rgba(136,192,168,0.2)] hover:shadow-[0_0_45px_rgba(136,192,168,0.4)] transition-shadow"
+          className="group inline-flex items-center gap-2 rounded-full bg-[#0E1319] border border-[#7BDCB5]/40 px-6 py-3 text-sm font-semibold text-[#E2E8F0] shadow-[0_0_25px_rgba(123,220,181,0.2)] hover:shadow-[0_0_45px_rgba(123,220,181,0.4)] transition-shadow"
         >
-          Experimentar Gratuitamente
+          Experimentar a Clareza
           <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
         </Link>
         <a
-          href="#metodologia"
+          href="#manifesto"
           className="inline-flex items-center gap-2.5 rounded-full bg-white/5 backdrop-blur-xl border border-white/10 px-5 py-3 text-sm font-medium text-slate-200 hover:bg-white/10 transition-colors"
         >
           <span className="w-6 h-6 rounded-full border border-white/20 flex items-center justify-center">
             <Play className="w-2.5 h-2.5 fill-current" />
           </span>
-          Como Funciona o PCP
+          Ver o Manifesto
         </a>
       </div>
     </div>
@@ -155,10 +154,10 @@ export const HeroSection: React.FC = () => (
       </div>
       <div className="absolute -top-4 right-0 sm:-right-4 z-10 animate-float-slower hidden sm:block">
         <div className="flex items-center gap-2.5 rounded-2xl border border-white/10 bg-[#0E1319]/80 backdrop-blur-xl px-3.5 py-2.5">
-          <CheckCircle2 className="w-4 h-4 text-[#88C0A8]" />
+          <CheckCircle2 className="w-4 h-4 text-[#7BDCB5]" />
           <div className="leading-tight">
-            <div className="text-xs font-semibold text-slate-100">Capacidade Segura // 92%</div>
-            <div className="font-mono text-[10px] text-slate-400">Saúde da rotina</div>
+            <div className="text-xs font-semibold text-slate-100">Harmonia Semanal // 92%</div>
+            <div className="font-mono text-[10px] text-slate-400">Clareza da rotina</div>
           </div>
         </div>
       </div>
@@ -166,9 +165,9 @@ export const HeroSection: React.FC = () => (
       <CockpitMockup />
 
       <div className="absolute -bottom-6 left-0 sm:left-6 z-10 animate-float-slower">
-        <div className="flex items-center gap-2.5 rounded-2xl border border-[#569DAA]/30 bg-[#0E1319]/80 backdrop-blur-xl px-3.5 py-2.5 shadow-[0_0_25px_rgba(86,157,170,0.18)]">
-          <SlidersHorizontal className="w-4 h-4 text-[#569DAA]" />
-          <div className="text-xs font-semibold text-slate-100">Rebalanceamento Ativo</div>
+        <div className="flex items-center gap-2.5 rounded-2xl border border-[#7BDCB5]/30 bg-[#0E1319]/80 backdrop-blur-xl px-3.5 py-2.5 shadow-[0_0_25px_rgba(123,220,181,0.18)]">
+          <SlidersHorizontal className="w-4 h-4 text-[#7BDCB5]" />
+          <div className="text-xs font-semibold text-slate-100">Harmonia Preservada</div>
         </div>
       </div>
     </div>

@@ -1,31 +1,52 @@
 @import "tailwindcss";
 
+/* Tokens Oficiais do Calm System */
+:root {
+  --cadence-bg: #090B0E;                       /* Liquid Obsidian */
+  --glass-surface: rgba(255, 255, 255, 0.03);  /* Vidro Primário */
+  --glass-surface-card: rgba(255, 255, 255, 0.065); /* Card Ativo */
+  --glass-border: rgba(255, 255, 255, 0.08);   /* Borda Fio de Luz */
+  --glass-border-light: rgba(255, 255, 255, 0.15); /* Rim Lighting Ativo */
+  
+  /* Acentos da Serenidade */
+  --accent-sage: #86EFAC;    /* Bloco Concluído / Clareza */
+  --accent-mint: #7BDCB5;    /* Status Ótimo / Leveza */
+  --accent-lavender: #BDB4FE;/* Síntese / Organização de Trilhas */
+  --accent-peach: #FDBA74;   /* Foco Especial Acolhedor */
+  --accent-sky: #7DD3FC;     /* Documentos & Conexões */
+}
+
 @theme {
-  /* Paleta Dark Liquid Slate */
-  --color-cadence-dark: #090b0e;
-  --color-cadence-card: #0e1319;
+  /* Paleta Liquid Obsidian & Serenidade (Calm System) */
+  --color-cadence-dark: #090B0E;
+  --color-cadence-card: #0E1319;
   --color-cadence-surface: #121820;
   --color-cadence-border: rgba(255, 255, 255, 0.08);
-  --color-cadence-sage: #88c0a8;
-  --color-cadence-cyan: #569daa;
-  --color-cadence-titanium: #a0aec0;
-  --color-cadence-muted: #94a3b8;
-  --color-cadence-light: #e2e8f0;
+  --color-cadence-sage: #86EFAC;
+  --color-cadence-mint: #7BDCB5;
+  --color-cadence-lavender: #BDB4FE;
+  --color-cadence-peach: #FDBA74;
+  --color-cadence-sky: #7DD3FC;
+  --color-cadence-cyan: #7BDCB5;
+  --color-cadence-titanium: #A0AEC0;
+  --color-cadence-muted: #94A3B8;
+  --color-cadence-light: #E2E8F0;
 
-  /* Tipografia */
-  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  /* Tipografia Unificada Calm System */
+  --font-sans: "Inter", "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
   --font-serif: "Newsreader", Georgia, serif;
 
-  /* Sombras de luz */
-  --shadow-sage-glow: 0 0 25px rgba(136, 192, 168, 0.18);
-  --shadow-cyan-glow: 0 0 25px rgba(86, 157, 170, 0.18);
+  /* Sombras e Iluminação Serena */
+  --shadow-sage-glow: 0 0 25px rgba(134, 239, 172, 0.2);
+  --shadow-mint-glow: 0 0 25px rgba(123, 220, 181, 0.2);
+  --shadow-peach-glow: 0 0 25px rgba(253, 186, 116, 0.2);
   --shadow-glass-edge: inset 0 1px 0 rgba(255, 255, 255, 0.12);
 
-  /* Desfoque de vidro */
+  /* Desfoque de Vidro */
   --blur-glass-2xl: 24px;
-  --blur-glass-3xl: 32px;
+  --blur-glass-3xl: 36px;
 
   /* Animações */
   --animate-orb-breathe: orb-breathe 8s ease-in-out infinite;
@@ -85,4 +106,15 @@ body {
 }
 .scrollbar-none::-webkit-scrollbar {
   display: none;
+}
+
+/* Apple Glassmorphism — Calm System v2.0 */
+.glass-panel-master {
+  background: var(--glass-surface);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  border: 1px solid var(--glass-border);
+  box-shadow: 
+    0 20px 50px rgba(0, 0, 0, 0.4),
+    inset 0 1px 1px rgba(255, 255, 255, 0.12);
 }

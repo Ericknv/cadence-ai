@@ -228,17 +228,17 @@ export const PlannerTab: React.FC<PlannerTabProps> = ({
   return (
     <div className={`space-y-6 ${className}`}>
       {/* 1. Header & Presets Rápidos de 1-Clique */}
-      <section className="p-4 sm:p-5 rounded-xl border border-zinc-800 bg-zinc-900/60 space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-zinc-800">
+      <section className="p-5 sm:p-6 rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur-2xl shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-white/10">
           <div>
             <div className="flex items-center gap-2">
-              <Scale className="w-4 h-4 text-amber-400" />
-              <h2 className="text-sm font-bold font-mono text-zinc-100 uppercase tracking-wider">
-                Matriz de Capacidade & Planejamento Semanal (PCP)
+              <Scale className="w-4 h-4 text-[#7BDCB5]" />
+              <h2 className="text-sm font-bold font-display text-slate-100 uppercase tracking-wider">
+                Harmonia da Semana & Planejamento Sereno
               </h2>
             </div>
-            <p className="text-xs text-zinc-400 font-mono mt-0.5">
-              Defina os minutos disponíveis em cada dia para despacho inteligente de carga.
+            <p className="text-xs text-slate-400 font-sans mt-0.5">
+              Defina seus blocos de respiro e tempo de foco em cada dia para um equilíbrio sereno.
             </p>
           </div>
 
@@ -410,25 +410,25 @@ export const PlannerTab: React.FC<PlannerTabProps> = ({
 
       {/* 3. Ação Principal de Rebalanceamento */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
-        <div className="text-xs font-mono text-zinc-500">
-          {pendingSessions.length} sessões aguardando otimização na esteira.
+        <div className="text-xs font-mono text-slate-400">
+          {pendingSessions.length} sessões aguardando agendamento na rotina.
         </div>
 
         <button
           type="button"
           onClick={handleExecuteRebalance}
           disabled={isLoading || pendingSessions.length === 0}
-          className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-mono font-semibold bg-blue-600 hover:bg-blue-500 disabled:bg-zinc-800 disabled:text-zinc-500 disabled:cursor-not-allowed text-white shadow-xs transition-colors cursor-pointer"
+          className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full text-xs font-mono font-semibold bg-[#7BDCB5] hover:bg-[#86EFAC] disabled:bg-white/5 disabled:text-slate-600 disabled:cursor-not-allowed text-slate-950 shadow-[0_0_20px_rgba(123,220,181,0.2)] transition-all cursor-pointer"
         >
           {isLoading ? (
             <>
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              Calculando Balanço de PCP...
+              Harmonizando Rotina com IA...
             </>
           ) : (
             <>
-              <Sparkles className="w-3.5 h-3.5 text-blue-200" />
-              Executar Rebalanceamento com IA
+              <Sparkles className="w-3.5 h-3.5 text-slate-950" />
+              Harmonizar Agenda com IA
             </>
           )}
         </button>
@@ -501,12 +501,12 @@ export const PlannerTab: React.FC<PlannerTabProps> = ({
           </div>
 
           {/* Diagnóstico Executivo da IA */}
-          <div className="p-3.5 rounded-lg bg-zinc-950 border border-zinc-800/80 text-xs font-mono text-zinc-300 space-y-1">
-            <span className="text-[10px] uppercase tracking-wider text-zinc-500 font-bold flex items-center gap-1">
-              <Brain className="w-3 h-3 text-zinc-400" />
-              Parecer Técnico de PCP:
+          <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/10 text-xs font-mono text-slate-300 space-y-1">
+            <span className="text-[10px] uppercase tracking-wider text-[#7BDCB5] font-bold flex items-center gap-1">
+              <Brain className="w-3 h-3 text-[#7BDCB5]" />
+              Diagnóstico de Harmonia:
             </span>
-            <p className="leading-relaxed">{rebalanceResult.diagnosis}</p>
+            <p className="leading-relaxed font-sans text-xs text-slate-300">{rebalanceResult.diagnosis}</p>
           </div>
 
           {/* Lista de Blocos Sugeridos (Accordion) */}

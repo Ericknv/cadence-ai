@@ -12,23 +12,23 @@ const BLOCKS: ProofBlock[] = [
   {
     numeral: '100%',
     numeralClass: 'text-[#E2E8F0]',
-    label: 'Respeito estrito ao teto de horas reais diárias (RCCP)',
+    label: 'Respeito estrito ao ritmo biológico e clareza diária',
     description:
-      'O motor matemático de alocação zera a ilusão de tempo disponível, eliminando a sobreposição de compromissos antes que ela ocorra.',
+      'A distribuição serena zera a ilusão de tempo infinito, eliminando a sobreposição de compromissos antes que ela ocorra.',
   },
   {
     numeral: '0',
-    numeralClass: 'text-[#88C0A8]',
-    label: 'Culpa por tarefas acumuladas no fim do dia',
+    numeralClass: 'text-[#7BDCB5]',
+    label: 'Culpa por listas acumuladas no fim do dia',
     description:
-      'O excesso de demanda é automaticamente diferido e redistribuído no horizonte futuro com base em capacidade real, não em desejo.',
+      'O excesso de demanda é acolhido e redistribuído no horizonte futuro com base em capacidade biológica real.',
   },
   {
     numeral: '3.8',
-    numeralClass: 'text-[#569DAA]',
-    label: 'Flash — Decomposição atômica por IA',
+    numeralClass: 'text-[#BDB4FE]',
+    label: 'Flash — Decomposição serena por IA',
     description:
-      'Ementas densas fatiadas em blocos executáveis de 30 a 60 minutos, com classificação de carga cognitiva.',
+      'Ementas e cursos densos organizados em blocos executáveis de 30 a 60 minutos, com foco acolhedor.',
     spanClass: 'md:col-span-2 lg:col-span-1',
   },
 ];

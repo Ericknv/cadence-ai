@@ -7,7 +7,7 @@ import { CadenceLogo } from '../brand/CadenceLogo';
 interface TopFloatingDockProps {
   activeTab: 'today' | 'tracks' | 'planner' | 'insights';
   onSelectTab: (tab: 'today' | 'tracks' | 'planner' | 'insights') => void;
-  rccpPercentage?: number;
+  harmonyPercentage?: number;
   user?: User | null;
   onOpenAuthModal?: () => void;
   onOpenProfile?: () => void;
@@ -17,7 +17,7 @@ interface TopFloatingDockProps {
 export const TopFloatingDock: React.FC<TopFloatingDockProps> = ({
   activeTab,
   onSelectTab,
-  rccpPercentage = 88,
+  harmonyPercentage = 88,
   user,
   onOpenAuthModal,
   onOpenProfile,
@@ -25,9 +25,9 @@ export const TopFloatingDock: React.FC<TopFloatingDockProps> = ({
 }) => {
   const tabs = [
     { id: 'today', label: 'Hoje' },
-    { id: 'tracks', label: 'Trilhas' },
-    { id: 'planner', label: 'Planejamento' },
-    { id: 'insights', label: 'Métricas' },
+    { id: 'tracks', label: 'Espaços' },
+    { id: 'planner', label: 'Harmonia' },
+    { id: 'insights', label: 'Jornada' },
   ] as const;
 
   // Iniciais do usuário para o avatar
@@ -64,14 +64,14 @@ export const TopFloatingDock: React.FC<TopFloatingDockProps> = ({
           })}
         </div>
 
-        {/* Zona 3: Indicador RCCP + Perfil do Estudante + Auth */}
+        {/* Zona 3: Indicador de Harmonia + Perfil do Estudante + Auth */}
         <div className="flex items-center gap-2 pl-2 sm:pl-3 border-l border-white/10 shrink-0">
           <div
-            className="flex items-center gap-1.5 font-mono text-[11px] text-[#88C0A8] bg-[#88C0A8]/10 px-2.5 py-1 rounded-full border border-[#88C0A8]/20"
-            title="Rough-Cut Capacity Planning: Taxa de Ocupação da Semana"
+            className="flex items-center gap-1.5 font-mono text-[11px] text-[#7BDCB5] bg-[#7BDCB5]/10 px-2.5 py-1 rounded-full border border-[#7BDCB5]/20"
+            title="Harmonia Semanal: Equilíbrio da Rotina"
           >
-            <span className="text-[9px] uppercase tracking-wider text-[#88C0A8]/80">RCCP</span>
-            <span className="font-bold">{rccpPercentage}%</span>
+            <span className="text-[9px] uppercase tracking-wider text-[#7BDCB5]/80">Harmonia</span>
+            <span className="font-bold">{harmonyPercentage}%</span>
           </div>
 
           {/* Botão de Perfil do Estudante */}

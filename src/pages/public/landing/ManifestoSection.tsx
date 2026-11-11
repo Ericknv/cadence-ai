@@ -14,25 +14,27 @@ export const ManifestoSection: React.FC = () => (
       aria-hidden="true"
     />
 
-    <blockquote className="relative max-w-3xl mx-auto text-center font-serif text-[22px] sm:text-[28px] lg:text-[34px] leading-[1.5] text-[#E2E8F0]">
-      <p>
-        O mundo não precisa de mais um aplicativo de tarefas que te faz se sentir atrasado.
-      </p>
-      <p className="mt-6 text-slate-400">
-        Você não precisa de mais listas vermelhas piscando no final da noite, lembrando do que você não conseguiu
-        fazer.
-      </p>
-      <p className="mt-6 italic text-[#88C0A8]">Você precisa de um regulador de ritmo.</p>
-
-      <p className="mt-16">
-        Porque produzir com burnout não é dedicação. <span className="italic">É erro de cálculo.</span>
-      </p>
-      <p className="mt-6 text-slate-400">
-        A produtividade sustentável é um problema de engenharia de capacidade, não de força de vontade.
-      </p>
-      <footer className="mt-10 font-display text-sm font-semibold uppercase tracking-[0.25em] text-[#88C0A8]">
-        Recupere a sua cadência.
-      </footer>
-    </blockquote>
+    <div className="relative max-w-3xl mx-auto text-center">
+      <span className="font-mono text-xs uppercase tracking-[0.25em] text-[#7BDCB5] mb-6 block">
+        // O Fim do Caos Cognitivo
+      </span>
+      <blockquote className="font-serif text-[22px] sm:text-[28px] lg:text-[32px] leading-[1.6] text-[#E2E8F0]">
+        <p>
+          Acreditamos que a mente humana foi feita para criar, sintetizar e compreender — não para gerenciar dezenas de abas abertas e notificações estridentes.
+        </p>
+        <p className="mt-8 text-slate-400 font-sans text-base sm:text-lg leading-relaxed">
+          Recusamos a ideia de que produtividade exige uma estética de fábrica ou a pressão de cronômetros vermelhos. O verdadeiro foco não nasce do pânico; nasce do espaço, da ordem e da clareza.
+        </p>
+        <p className="mt-8 italic text-[#7BDCB5] font-serif text-xl sm:text-2xl">
+          O Cadence AI é o seu santuário de conhecimento.
+        </p>
+        <p className="mt-6 text-slate-400 font-sans text-sm sm:text-base leading-relaxed">
+          Um ambiente digital onde a física do vidro translúcido, a tipografia equilibrada e os ritmos de respiro devolvem a você o controle do seu tempo. Menos atrito. Menos ruído. Apenas você e o seu ritmo ideal.
+        </p>
+        <footer className="mt-12 font-display text-sm font-semibold uppercase tracking-[0.25em] text-[#7BDCB5]">
+          A calma que sua rotina exigente precisa.
+        </footer>
+      </blockquote>
+    </div>
   </section>
 );

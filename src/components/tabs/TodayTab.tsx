@@ -39,7 +39,7 @@ export const TodayTab: React.FC<TodayTabProps> = ({
   const [statusFilter, setStatusFilter] = useState<'all' | SessionStatus>('all');
   const [checkedGoals, setCheckedGoals] = useState<Record<string, boolean>>({});
 
-  // 1. Cálculos da Faixa de Telemetria de Capacidade (RCCP Diário)
+  // 1. Cálculos da Faixa de Clareza do Dia (Calm System v2.0)
   const totalPlannedMinutes = blocks.reduce(
     (acc, b) => acc + (b.session?.estimated_duration_min || 0),
     0
@@ -82,30 +82,30 @@ export const TodayTab: React.FC<TodayTabProps> = ({
       ? blocks
       : blocks.filter((b) => b.session?.status === statusFilter);
 
-  // EMPTY STATE REFINADO (Isolamento Estrito v1.2.1)
+  // EMPTY STATE REFINADO (Calm System v2.0)
   if (blocks.length === 0) {
     return (
       <div className={`space-y-6 ${className}`}>
         <div className="rounded-3xl border border-white/10 bg-[#0E1319]/70 backdrop-blur-2xl p-8 sm:p-12 text-center space-y-4 shadow-[0_20px_50px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.08)]">
-          <div className="w-12 h-12 rounded-2xl bg-[#88C0A8]/10 border border-[#88C0A8]/30 flex items-center justify-center mx-auto text-[#88C0A8] shadow-[0_0_20px_rgba(136,192,168,0.2)]">
+          <div className="w-12 h-12 rounded-2xl bg-[#7BDCB5]/10 border border-[#7BDCB5]/30 flex items-center justify-center mx-auto text-[#7BDCB5] shadow-[0_0_20px_rgba(123,220,181,0.2)]">
             <Sparkles className="w-6 h-6" />
           </div>
           <div className="space-y-1.5 max-w-md mx-auto">
             <h3 className="font-display text-lg font-bold text-slate-100">
-              Nenhuma trilha cadastrada
+              Nenhum espaço ativo
             </h3>
             <p className="text-xs text-slate-400 font-sans leading-relaxed">
-              Crie sua primeira disciplina para decompor ementas com IA e calcular sua cadência cognitiva com teto RCCP.
+              Crie seu primeiro espaço para decompor conteúdos com IA e estabelecer um ritmo sereno para sua rotina.
             </p>
           </div>
           {onOpenCreateTrack && (
             <button
               type="button"
               onClick={onOpenCreateTrack}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-mono text-xs font-bold bg-[#88C0A8] hover:bg-[#9ad0b8] text-slate-950 shadow-[0_0_25px_rgba(136,192,168,0.25)] transition-all cursor-pointer"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-mono text-xs font-bold bg-[#7BDCB5] hover:bg-[#86EFAC] text-slate-950 shadow-[0_0_25px_rgba(123,220,181,0.25)] transition-all cursor-pointer"
             >
               <Plus className="w-4 h-4" />
-              <span>Criar Primeira Trilha com IA</span>
+              <span>Criar Primeiro Espaço com IA</span>
             </button>
           )}
         </div>
@@ -115,14 +115,14 @@ export const TodayTab: React.FC<TodayTabProps> = ({
 
   return (
     <div className={`space-y-6 sm:space-y-8 ${className}`}>
-      {/* 1. Faixa de Telemetria de Capacidade (Refinamento de Dados & Tipografia Global) */}
+      {/* 1. Faixa de Clareza do Dia (Calm System v2.0) */}
       <section
-        aria-label="Telemetria de Capacidade Diária"
+        aria-label="Faixa de Clareza do Dia"
         className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 p-3.5 sm:p-4 rounded-3xl bg-[#090B0E]/70 backdrop-blur-xl border border-white/10 shadow-[0_10px_30px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.05)]"
       >
         <div className="p-3 rounded-2xl bg-white/[0.02] border border-white/5 space-y-1">
           <div className="text-[10px] font-mono uppercase tracking-wider text-slate-400">
-            Carga Planejada
+            Tempo Planejado
           </div>
           <div className="text-xl sm:text-2xl font-display font-bold text-slate-100">
             {Math.round((totalPlannedMinutes / 60) * 10) / 10}h
@@ -134,26 +134,26 @@ export const TodayTab: React.FC<TodayTabProps> = ({
 
         <div className="p-3 rounded-2xl bg-white/[0.02] border border-white/5 space-y-1">
           <div className="text-[10px] font-mono uppercase tracking-wider text-slate-400">
-            Aderência
+            Harmonia do Dia
           </div>
-          <div className="text-xl sm:text-2xl font-display font-bold text-[#88C0A8]">
+          <div className="text-xl sm:text-2xl font-display font-bold text-[#7BDCB5]">
             {adherencePct}%
           </div>
         </div>
 
         <div className="p-3 rounded-2xl bg-white/[0.02] border border-white/5 space-y-1">
           <div className="text-[10px] font-mono uppercase tracking-wider text-slate-400 flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#FB7185]" />
-            Deep Work
+            <span className="w-1.5 h-1.5 rounded-full bg-[#FDBA74]" />
+            Foco Profundo
           </div>
-          <div className="text-xl sm:text-2xl font-display font-bold text-[#FB7185]">
+          <div className="text-xl sm:text-2xl font-display font-bold text-[#FDBA74]">
             {deepWorkMinutes}m
           </div>
         </div>
 
         <div className="p-3 rounded-2xl bg-white/[0.02] border border-white/5 space-y-1">
           <div className="text-[10px] font-mono uppercase tracking-wider text-slate-400">
-            Tempo Restante
+            Tempo Disponível
           </div>
           <div className="text-xl sm:text-2xl font-display font-bold text-slate-200">
             {remainingMinutes}m
@@ -161,14 +161,14 @@ export const TodayTab: React.FC<TodayTabProps> = ({
         </div>
       </section>
 
-      {/* 2. Card de Foco Executivo (Glassmorphism rounded-3xl com Tag Coral Deep Work) */}
+      {/* 2. Card de Foco Sereno (Glassmorphism rounded-3xl com Tag Âmbar Solar / Pêssego) */}
       {activeBlock && (
         <section
           aria-labelledby="executive-focus-title"
           className="relative rounded-3xl border border-white/10 bg-gradient-to-b from-white/[0.05] via-white/[0.02] to-transparent backdrop-blur-2xl p-6 sm:p-8 shadow-[0_25px_60px_rgba(0,0,0,0.7),inset_0_1px_0_rgba(255,255,255,0.08)] space-y-5 overflow-hidden transition-all duration-300"
         >
           {/* Luz de acento sutil no topo do card */}
-          <div className="absolute top-0 left-1/4 right-1/4 h-[1px] bg-gradient-to-r from-transparent via-emerald-400/40 to-transparent pointer-events-none" />
+          <div className="absolute top-0 left-1/4 right-1/4 h-[1px] bg-gradient-to-r from-transparent via-[#7BDCB5]/40 to-transparent pointer-events-none" />
 
           {/* Top Row: Meta-tags, Trilha e Badge de Esforço */}
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -181,21 +181,21 @@ export const TodayTab: React.FC<TodayTabProps> = ({
               </span>
             </div>
 
-            {/* Tag de Esforço Cognitivo: Destaque Coral Suave para Deep Work */}
+            {/* Tag de Esforço Cognitivo: Âmbar Solar / Pêssego para Foco Profundo sem alarme */}
             {activeBlock.session.cognitive_effort === 'high' ? (
-              <div className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wider font-semibold px-2.5 py-1 rounded-full bg-[#FB7185]/10 text-[#FB7185] border border-[#FB7185]/25 shadow-[0_0_12px_rgba(251,113,133,0.15)]">
-                <Brain className="w-3 h-3 text-[#FB7185]" />
-                <span>Deep Work • Alto Esforço</span>
+              <div className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wider font-semibold px-2.5 py-1 rounded-full bg-[#FDBA74]/10 text-[#FDBA74] border border-[#FDBA74]/25 shadow-[0_0_12px_rgba(253,186,116,0.15)]">
+                <Brain className="w-3 h-3 text-[#FDBA74]" />
+                <span>Foco Profundo • Alta Densidade</span>
               </div>
             ) : activeBlock.session.cognitive_effort === 'medium' ? (
-              <div className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wider font-semibold px-2.5 py-1 rounded-full bg-sky-500/10 text-sky-400 border border-sky-500/25">
+              <div className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wider font-semibold px-2.5 py-1 rounded-full bg-[#7DD3FC]/10 text-[#7DD3FC] border border-[#7DD3FC]/25">
                 <Brain className="w-3 h-3" />
-                <span>Prática Procedural</span>
+                <span>Prática Construtiva</span>
               </div>
             ) : (
-              <div className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wider font-semibold px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/25">
+              <div className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wider font-semibold px-2.5 py-1 rounded-full bg-[#86EFAC]/10 text-[#86EFAC] border border-[#86EFAC]/25">
                 <Brain className="w-3 h-3" />
-                <span>Revisão Espaçada</span>
+                <span>Revisão & Síntese</span>
               </div>
             )}
           </div>
@@ -269,7 +269,7 @@ export const TodayTab: React.FC<TodayTabProps> = ({
                 </strong>
               </div>
               <span className="text-[11px] font-mono text-slate-500 hidden sm:inline">
-                {isSessionInProgress ? 'Sessão em curso ativo' : 'Pronto para despacho'}
+                {isSessionInProgress ? 'Sessão em curso ativo' : 'Pronto para iniciar'}
               </span>
             </div>
 

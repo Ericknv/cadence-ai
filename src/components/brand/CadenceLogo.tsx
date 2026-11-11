@@ -4,7 +4,7 @@ interface CadenceLogoProps {
   className?: string;
   size?: number;
   showText?: boolean;
-  /** Texto secundário abaixo da marca (ex.: "PCP Cognitivo"). */
+  /** Texto secundário abaixo da marca (ex.: "Hub Cognitivo"). */
   subtitle?: string;
 }
 
@@ -12,7 +12,7 @@ export const CadenceLogo: React.FC<CadenceLogoProps> = ({
   className = '',
   size = 28,
   showText = true,
-  subtitle = 'PCP Cognitivo',
+  subtitle = 'Hub Cognitivo',
 }) => {
   return (
     <div className={`flex items-center gap-2.5 select-none ${className}`}>

@@ -15,10 +15,10 @@ const LoadWave: React.FC<{ load: number }> = ({ load }) => {
   const chaos = `M0 45 L30 ${45 - amp} L55 ${45 + amp * 0.8} L85 ${45 - amp * 1.1} L110 ${45 + amp} L140 ${45 - amp * 0.7} L170 ${45 + amp * 1.1} L200 ${45 - amp} L230 ${45 + amp * 0.9} L260 ${45 - amp * 1.2} L290 ${45 + amp * 0.6} L320 ${45 - amp} L350 ${45 + amp} L400 45`;
   return (
     <svg viewBox="0 0 400 90" className="w-full h-20" fill="none" aria-hidden="true">
-      <path d={chaos} stroke="#FB7185" strokeOpacity="0.45" strokeWidth="1.5" strokeLinejoin="round" />
+      <path d={chaos} stroke="#FDBA74" strokeOpacity="0.45" strokeWidth="1.5" strokeLinejoin="round" />
       <path
         d="M0 45 C 40 15, 80 15, 120 45 S 200 75, 240 45 S 320 15, 360 45 S 390 55, 400 45"
-        stroke="#88C0A8"
+        stroke="#7BDCB5"
         strokeWidth="2.5"
         strokeLinecap="round"
       />
@@ -55,17 +55,17 @@ export const SimulatorSection: React.FC = () => {
       : 'safe';
 
   const statusStyles = {
-    danger: { box: 'border-rose-500/30 bg-rose-950/30 text-rose-200', icon: 'text-rose-400' },
+    danger: { box: 'border-[#FDBA74]/30 bg-[#FDBA74]/10 text-amber-200', icon: 'text-[#FDBA74]' },
     warn: { box: 'border-amber-500/30 bg-amber-950/30 text-amber-200', icon: 'text-amber-400' },
-    safe: { box: 'border-[#88C0A8]/30 bg-[#88C0A8]/10 text-[#B7DCC9]', icon: 'text-[#88C0A8]' },
+    safe: { box: 'border-[#7BDCB5]/30 bg-[#7BDCB5]/10 text-[#7BDCB5]', icon: 'text-[#7BDCB5]' },
   }[status];
 
   const statusText =
     status === 'danger'
-      ? `ALERTA DE ESTRESSE: SOBRECARGA DE ${diag.percentualCarga}%`
+      ? `PONTO DE ATENÇÃO: CARGA ELEVADA DE ${diag.percentualCarga}%`
       : status === 'warn'
-        ? `ATENÇÃO: ${diag.percentualCarga}% DA CAPACIDADE — BANDEIRA AMARELA`
-        : `CAPACIDADE SEGURA: ${diag.percentualCarga}% DO LIMITE`;
+        ? `AVISO DE RITMO: ${diag.percentualCarga}% DA CAPACIDADE SUGERIDA`
+        : `HARMONIA PRESERVADA: ${diag.percentualCarga}% DO LIMITE`;
 
   return (
     <section id="simulador" className="relative scroll-mt-28 px-4 sm:px-6 py-20">

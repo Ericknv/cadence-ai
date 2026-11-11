@@ -179,8 +179,7 @@ export const ImportExternalCourseModal: React.FC<ImportExternalCourseModalProps>
             Importar Curso Externo
           </h2>
           <p className="text-xs text-slate-400 font-sans leading-relaxed">
-            Converta cursos da Udemy, Coursera, Alura ou faculdade em blocos atômicos encaixados na sua esteira de
-            capacidade.
+            Converta cursos da Udemy, Coursera, Alura ou faculdade em blocos atômicos integrados ao seu fluxo sereno de aprendizado.
           </p>
         </div>
 

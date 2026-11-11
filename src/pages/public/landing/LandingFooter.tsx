@@ -17,7 +17,7 @@ const COLUMNS: FooterColumn[] = [
   {
     title: 'Produto',
     links: [
-      { label: 'Metodologia PCP', href: '#metodologia' },
+      { label: 'Metodologia Calm System', href: '#metodologia' },
       { label: 'Decomposição por IA', href: '#metodologia' },
       { label: 'Motor de Rebalanceamento', href: '#metodologia' },
       { label: 'Simulador de Carga', href: '#simulador' },
