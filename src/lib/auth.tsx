@@ -33,6 +33,12 @@ const readDemoFlag = (): boolean => {
   }
 };
 
+export const getAuthRedirectTarget = (): string => {
+  return typeof window !== 'undefined'
+    ? `${window.location.origin}/app/today`
+    : 'https://cadence-ai-yvph.onrender.com/app/today';
+};
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUserState] = useState<User | null>(null);
   const [isDemo, setIsDemo] = useState<boolean>(readDemoFlag);
@@ -47,6 +53,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const hasAccessToken = hash.includes('access_token=') || hash.includes('type=recovery');
     const hasAuthCode = search.includes('code=');
+    const hasError =
+      search.includes('error=') ||
+      search.includes('error_code=') ||
+      hash.includes('error=') ||
+      hash.includes('error_code=');
+
+    if (hasError) {
+      setIsLoading(false);
+      return;
+    }
 
     if (hasAccessToken || hasAuthCode) {
       // Se detectado token de Magic Link / OAuth na URL, redireciona suavemente para /app/today

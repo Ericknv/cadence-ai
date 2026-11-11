@@ -54,9 +54,42 @@ export const LoginPage: React.FC = () => {
   const [isGoogleLoading, setIsGoogleLoading] = useState<boolean>(false);
   const [message, setMessage] = useState<FeedbackMessage | null>(null);
 
-  // Redirecionamento suave caso haja token na URL (#access_token=...)
+  // Target explícito e dinâmico de redirecionamento (evita localhost estático em produção)
+  const redirectTarget =
+    typeof window !== 'undefined'
+      ? `${window.location.origin}/app/today`
+      : 'https://cadence-ai-yvph.onrender.com/app/today';
+
+  // Captura e tratamento de erros de callback na URL (search e hash)
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.location.hash.includes('access_token=')) {
+    if (typeof window === 'undefined') return;
+
+    const searchParamsObj = new URLSearchParams(window.location.search);
+    const hashStr = window.location.hash.startsWith('#')
+      ? window.location.hash.substring(1)
+      : window.location.hash;
+    const hashParams = new URLSearchParams(hashStr);
+
+    const errorCondition =
+      searchParamsObj.get('error') ||
+      searchParamsObj.get('error_code') ||
+      searchParamsObj.get('error_description') ||
+      hashParams.get('error') ||
+      hashParams.get('error_code') ||
+      hashParams.get('error_description');
+
+    if (errorCondition) {
+      setMessage({
+        type: 'error',
+        text: 'O link de acesso expirou, é inválido ou a autenticação foi cancelada. Por favor, tente novamente ou entre com e-mail e senha.',
+      });
+      // Limpa imediatamente os parâmetros da URL
+      window.history.replaceState(null, '', window.location.pathname);
+      return;
+    }
+
+    // Redirecionamento suave caso haja token na URL (#access_token=...)
+    if (window.location.hash.includes('access_token=')) {
       if (configured) {
         supabaseClient.auth.getSession().then(({ data: { session } }) => {
           if (session?.user) {
@@ -67,14 +100,23 @@ export const LoginPage: React.FC = () => {
     }
   }, [configured, navigate]);
 
-  // Checagens de Força de Senha
+  // Checagens de Força de Senha (Critérios de Entropia: 8+ chars, 1 número, 1 maiúscula, 1 minúscula, 1 símbolo)
   const hasMinLength = password.length >= 8;
   const hasNumber = /\d/.test(password);
   const hasUppercase = /[A-Z]/.test(password);
+  const hasLowercase = /[a-z]/.test(password);
   const hasSymbol = /[^A-Za-z0-9]/.test(password);
 
-  const strengthScore = [hasMinLength, hasNumber, hasUppercase, hasSymbol].filter(Boolean).length;
-  const isPasswordStrong = strengthScore === 4;
+  const criteriaList = [
+    { label: '8+ caracteres', met: hasMinLength },
+    { label: '1 maiúscula', met: hasUppercase },
+    { label: '1 minúscula', met: hasLowercase },
+    { label: '1 número', met: hasNumber },
+    { label: '1 símbolo (!@#$)', met: hasSymbol },
+  ];
+
+  const strengthScore = criteriaList.filter((c) => c.met).length;
+  const isPasswordStrong = strengthScore === 5;
   const passwordsMatch = password.length > 0 && password === confirmPassword;
 
   const isEmailValid = EMAIL_PATTERN.test(email.trim());
@@ -112,7 +154,7 @@ export const LoginPage: React.FC = () => {
     const { error } = await supabaseClient.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/app/today`,
+        redirectTo: redirectTarget,
       },
     });
     if (error) {
@@ -137,7 +179,7 @@ export const LoginPage: React.FC = () => {
         const { error } = await supabaseClient.auth.signInWithOtp({
           email: email.trim(),
           options: {
-            emailRedirectTo: `${window.location.origin}/app/today`,
+            emailRedirectTo: redirectTarget,
           },
         });
         if (error) throw error;
@@ -163,7 +205,7 @@ export const LoginPage: React.FC = () => {
             email: email.trim(),
             password,
             options: {
-              emailRedirectTo: `${window.location.origin}/app/today`,
+              emailRedirectTo: redirectTarget,
             },
           });
           if (error) throw error;
@@ -201,10 +243,11 @@ export const LoginPage: React.FC = () => {
   };
 
   const getStrengthLabel = () => {
-    if (strengthScore <= 1) return { text: 'Fraca', color: 'text-rose-400', bg: 'bg-rose-500' };
-    if (strengthScore === 2) return { text: 'Razoável', color: 'text-amber-400', bg: 'bg-amber-500' };
-    if (strengthScore === 3) return { text: 'Boa', color: 'text-sky-400', bg: 'bg-sky-500' };
-    return { text: 'Forte (Pronta)', color: 'text-[#88C0A8]', bg: 'bg-[#88C0A8]' };
+    if (strengthScore <= 1) return { text: 'Muito Fraca', color: 'text-rose-400', bg: 'bg-rose-500' };
+    if (strengthScore === 2) return { text: 'Fraca', color: 'text-[#FB7185]', bg: 'bg-[#FB7185]' };
+    if (strengthScore === 3) return { text: 'Razoável', color: 'text-[#FDBA74]', bg: 'bg-[#FDBA74]' };
+    if (strengthScore === 4) return { text: 'Boa', color: 'text-sky-400', bg: 'bg-sky-400' };
+    return { text: 'Forte (Pronta)', color: 'text-[#7BDCB5]', bg: 'bg-[#7BDCB5]' };
   };
 
   const strength = getStrengthLabel();
@@ -362,7 +405,7 @@ export const LoginPage: React.FC = () => {
                   {mode === 'signup' && password.length > 0 && (
                     <div className="pt-1 space-y-2">
                       <div className="flex gap-1.5 h-1 w-full bg-white/5 rounded-full overflow-hidden">
-                        {[1, 2, 3, 4].map((step) => (
+                        {[1, 2, 3, 4, 5].map((step) => (
                           <div
                             key={step}
                             className={`flex-1 rounded-full transition-all duration-300 ${
@@ -373,22 +416,17 @@ export const LoginPage: React.FC = () => {
                       </div>
 
                       <div className="grid grid-cols-2 gap-1.5 text-[10px] font-mono pt-1 text-slate-400">
-                        <span className={`flex items-center gap-1 ${hasMinLength ? 'text-[#88C0A8]' : 'text-slate-500'}`}>
-                          {hasMinLength ? <Check className="w-3 h-3" /> : <XIcon className="w-3 h-3" />}
-                          8+ caracteres
-                        </span>
-                        <span className={`flex items-center gap-1 ${hasUppercase ? 'text-[#88C0A8]' : 'text-slate-500'}`}>
-                          {hasUppercase ? <Check className="w-3 h-3" /> : <XIcon className="w-3 h-3" />}
-                          1 maiúscula
-                        </span>
-                        <span className={`flex items-center gap-1 ${hasNumber ? 'text-[#88C0A8]' : 'text-slate-500'}`}>
-                          {hasNumber ? <Check className="w-3 h-3" /> : <XIcon className="w-3 h-3" />}
-                          1 número
-                        </span>
-                        <span className={`flex items-center gap-1 ${hasSymbol ? 'text-[#88C0A8]' : 'text-slate-500'}`}>
-                          {hasSymbol ? <Check className="w-3 h-3" /> : <XIcon className="w-3 h-3" />}
-                          1 símbolo (!@#$)
-                        </span>
+                        {criteriaList.map((crit) => (
+                          <span
+                            key={crit.label}
+                            className={`flex items-center gap-1 ${
+                              crit.met ? 'text-[#7BDCB5]' : 'text-slate-500'
+                            }`}
+                          >
+                            {crit.met ? <Check className="w-3 h-3" /> : <XIcon className="w-3 h-3" />}
+                            {crit.label}
+                          </span>
+                        ))}
                       </div>
                     </div>
                   )}
@@ -411,9 +449,9 @@ export const LoginPage: React.FC = () => {
                       className={`w-full h-11 rounded-xl bg-black/30 border px-3.5 text-sm text-slate-100 placeholder:text-slate-600 focus:outline-none transition-colors font-mono ${
                         confirmPassword.length > 0
                           ? passwordsMatch
-                            ? 'border-[#88C0A8]/60 focus:border-[#88C0A8]'
+                            ? 'border-[#7BDCB5]/60 focus:border-[#7BDCB5]'
                             : 'border-rose-500/60 focus:border-rose-400'
-                          : 'border-white/10 focus:border-[#88C0A8]/60'
+                          : 'border-white/10 focus:border-[#7BDCB5]/60'
                       }`}
                     />
                     {confirmPassword.length > 0 && !passwordsMatch && (
@@ -427,7 +465,7 @@ export const LoginPage: React.FC = () => {
             <button
               type="submit"
               disabled={!canSubmit}
-              className="w-full h-12 rounded-xl flex items-center justify-center gap-2 text-sm font-semibold text-[#06120D] bg-[#88C0A8] hover:bg-[#9ad0b8] shadow-[0_0_25px_rgba(136,192,168,0.25)] transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
+              className="w-full h-12 rounded-xl flex items-center justify-center gap-2 text-sm font-semibold text-slate-950 bg-[#7BDCB5] hover:bg-[#86EFAC] shadow-[0_0_25px_rgba(123,220,181,0.25)] transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
             >
               {isLoading ? (
                 <Loader2 className="w-4 h-4 animate-spin" />

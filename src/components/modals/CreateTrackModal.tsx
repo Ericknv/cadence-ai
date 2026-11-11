@@ -68,20 +68,24 @@ const PRESET_TEMPLATES = [
 
 const PIPELINE_STEPS = [
   {
-    label: 'Analisando ementa e estrutura conceitual...',
+    label: 'Indexando matriz curricular e tópicos essenciais...',
     sub: 'Varredura sintática e semântica de tópicos com Gemini 3.8 Flash',
   },
   {
-    label: 'Calculando densidade cognitiva e fatores humanos...',
-    sub: 'Taxonomia de esforço mental: Deep Work, Prática ou Revisão',
+    label: 'Aplicando restrições de Rough-Cut Capacity Planning (RCCP)...',
+    sub: 'Modelagem de capacidade cognitiva e janelas de atenção ótima',
   },
   {
-    label: 'Fatiando em blocos atômicos de 30 a 60 min...',
-    sub: 'Decomposição pedagógica sem fadiga decisória com metas atômicas',
+    label: 'Segmentando ementa em blocos atômicos de 45 a 60 minutos...',
+    sub: 'Decomposição pedagógica estruturada sem fadiga decisória',
   },
   {
-    label: 'Balanceando a harmonia semanal de aprendizagem...',
-    sub: 'Alocação rítmica nos turnos preservando clareza e bem-estar',
+    label: 'Classificando níveis cognitivos (Deep Work vs. Revisão)...',
+    sub: 'Taxonomia de esforço mental e absorção sustentável',
+  },
+  {
+    label: 'Sincronizando trilha com o banco de dados...',
+    sub: 'Persistência segura com isolamento de tenant no Supabase',
   },
 ];
 
@@ -230,23 +234,23 @@ export const CreateTrackModal: React.FC<CreateTrackModalProps> = ({
     <div className="fixed inset-0 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
       {/* TELA DE LOADING CINEMATOGRÁFICA DA IA */}
       {isLoading ? (
-        <div className="bg-[#090B0E]/95 border border-white/10 rounded-3xl max-w-lg w-full p-8 shadow-[0_30px_90px_rgba(0,0,0,0.8),inset_0_1px_0_rgba(255,255,255,0.1)] backdrop-blur-3xl space-y-6 relative overflow-hidden animate-in zoom-in-95 duration-300">
+        <div className="bg-[#090B0E]/80 backdrop-blur-3xl border border-white/10 rounded-3xl p-8 max-w-lg w-full mx-auto text-center space-y-6 shadow-2xl relative overflow-hidden animate-in zoom-in-95 duration-300">
           {/* Feixe de Luz Difusa Esmeralda de Fundo */}
           <div
             className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-72 rounded-full pointer-events-none blur-[90px] opacity-40"
-            style={{ background: 'radial-gradient(circle, #88C0A8 0%, #569DAA 50%, transparent 70%)' }}
+            style={{ background: 'radial-gradient(circle, #34D399 0%, #569DAA 50%, transparent 70%)' }}
             aria-hidden="true"
           />
 
           <div className="relative z-10 flex flex-col items-center text-center space-y-3">
             <div className="relative">
-              <div className="w-16 h-16 rounded-full bg-[#88C0A8]/10 border border-[#88C0A8]/40 flex items-center justify-center shadow-[0_0_35px_rgba(136,192,168,0.3)] animate-pulse">
+              <div className="w-16 h-16 rounded-full bg-emerald-500/10 border border-emerald-400/30 flex items-center justify-center shadow-[0_0_40px_rgba(52,211,153,0.2)] animate-pulse">
                 <CadenceLogo size={36} showText={false} />
               </div>
             </div>
 
             <div>
-              <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-[#88C0A8] bg-[#88C0A8]/10 px-3 py-1 rounded-full border border-[#88C0A8]/30">
+              <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-[#7BDCB5] bg-[#7BDCB5]/10 px-3 py-1 rounded-full border border-[#7BDCB5]/30">
                 Gemini 3.8 Flash // Decomposer Core
               </span>
               <h3 className="text-xl font-bold text-slate-100 font-display mt-2">
@@ -258,10 +262,10 @@ export const CreateTrackModal: React.FC<CreateTrackModalProps> = ({
             </div>
           </div>
 
-          {/* Barra de Progresso Contínua e Elegante */}
-          <div className="relative z-10 w-full h-1.5 rounded-full bg-white/5 overflow-hidden border border-white/10">
+          {/* Micro-barra de Progresso Minimalista em Gradiente Ciano-Esmeralda */}
+          <div className="relative z-10 w-full h-1 rounded-full bg-white/5 overflow-hidden border border-white/10">
             <div
-              className="h-full bg-gradient-to-r from-[#88C0A8] via-[#569DAA] to-[#88C0A8] rounded-full transition-all duration-700 ease-out"
+              className="h-full bg-gradient-to-r from-cyan-400 via-emerald-400 to-teal-300 rounded-full transition-all duration-700 ease-out"
               style={{ width: `${((currentStepIndex + 1) / PIPELINE_STEPS.length) * 100}%` }}
             />
           </div>
