@@ -1,6 +1,19 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { AlertCircle, ArrowLeft, ArrowRight, CheckCircle2, Loader2, Lock, Mail, UserPlus, LogIn } from 'lucide-react';
+import {
+  AlertCircle,
+  ArrowLeft,
+  ArrowRight,
+  CheckCircle2,
+  Loader2,
+  Lock,
+  Mail,
+  UserPlus,
+  LogIn,
+  Check,
+  X as XIcon,
+  ShieldCheck,
+} from 'lucide-react';
 import { CadenceLogo } from '../../components/brand/CadenceLogo';
 import { supabaseClient, isSupabaseConfigured } from '../../lib/supabaseClient';
 import { useAuth } from '../../lib/auth';
@@ -24,7 +37,7 @@ const GoogleIcon: React.FC = () => (
   </svg>
 );
 
-const LoginPage: React.FC = () => {
+export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { enterDemo } = useAuth();
@@ -35,23 +48,57 @@ const LoginPage: React.FC = () => {
   const [method, setMethod] = useState<AuthMethod>('magic');
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
+  const [confirmPassword, setConfirmPassword] = useState<string>('');
   const [touched, setTouched] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState<boolean>(false);
   const [message, setMessage] = useState<FeedbackMessage | null>(null);
 
+  // Redirecionamento suave caso haja token na URL (#access_token=...)
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.location.hash.includes('access_token=')) {
+      if (configured) {
+        supabaseClient.auth.getSession().then(({ data: { session } }) => {
+          if (session?.user) {
+            navigate('/app/today', { replace: true });
+          }
+        });
+      }
+    }
+  }, [configured, navigate]);
+
+  // Checagens de Força de Senha
+  const hasMinLength = password.length >= 8;
+  const hasNumber = /\d/.test(password);
+  const hasUppercase = /[A-Z]/.test(password);
+  const hasSymbol = /[^A-Za-z0-9]/.test(password);
+
+  const strengthScore = [hasMinLength, hasNumber, hasUppercase, hasSymbol].filter(Boolean).length;
+  const isPasswordStrong = strengthScore === 4;
+  const passwordsMatch = password.length > 0 && password === confirmPassword;
+
   const isEmailValid = EMAIL_PATTERN.test(email.trim());
   const showEmailError = touched && email.length > 0 && !isEmailValid;
-  const canSubmit = isEmailValid && (method === 'magic' || password.length >= 6) && !isLoading;
+
+  // Validação estrita do botão de submissão
+  const canSubmit =
+    isEmailValid &&
+    !isLoading &&
+    (method === 'magic'
+      ? true
+      : mode === 'signin'
+      ? password.length >= 6
+      : isPasswordStrong && passwordsMatch);
 
   const missingConfigMessage: FeedbackMessage = {
     type: 'error',
-    text: 'Autenticação indisponível neste ambiente (Supabase não configurado). Use o Modo Demonstração.',
+    text: 'Autenticação remota indisponível (Supabase não configurado). Use o Modo Demonstração.',
   };
 
   const handleModeChange = (newMode: AuthMode) => {
     setMode(newMode);
     setMessage(null);
+    setConfirmPassword('');
     setSearchParams(newMode === 'signup' ? { mode: 'signup' } : {});
   };
 
@@ -64,7 +111,9 @@ const LoginPage: React.FC = () => {
     setMessage(null);
     const { error } = await supabaseClient.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${window.location.origin}/app/today` },
+      options: {
+        redirectTo: `${window.location.origin}/app/today`,
+      },
     });
     if (error) {
       setMessage({ type: 'error', text: error.message });
@@ -87,29 +136,44 @@ const LoginPage: React.FC = () => {
       if (method === 'magic') {
         const { error } = await supabaseClient.auth.signInWithOtp({
           email: email.trim(),
-          options: { emailRedirectTo: `${window.location.origin}/app/today` },
+          options: {
+            emailRedirectTo: `${window.location.origin}/app/today`,
+          },
         });
         if (error) throw error;
         setMessage({
           type: 'success',
-          text: mode === 'signup'
-            ? 'Link de ativação enviado! Acesse seu e-mail para validar a conta e entrar.'
-            : 'Magic Link enviado! Verifique sua caixa de entrada para acessar o cockpit.',
+          text:
+            mode === 'signup'
+              ? 'Link de ativação enviado! Acesse seu e-mail para validar a conta e entrar.'
+              : 'Magic Link enviado! Verifique sua caixa de entrada para acessar o cockpit.',
         });
       } else {
         if (mode === 'signup') {
+          if (!isPasswordStrong || !passwordsMatch) {
+            setMessage({
+              type: 'error',
+              text: 'A senha precisa cumprir todos os requisitos de segurança e coincidir na confirmação.',
+            });
+            setIsLoading(false);
+            return;
+          }
+
           const { data, error } = await supabaseClient.auth.signUp({
             email: email.trim(),
             password,
-            options: { emailRedirectTo: `${window.location.origin}/app/today` },
+            options: {
+              emailRedirectTo: `${window.location.origin}/app/today`,
+            },
           });
           if (error) throw error;
           if (data.session) {
             setMessage({ type: 'success', text: 'Conta criada e autenticada com sucesso!' });
+            navigate('/app/today', { replace: true });
           } else {
             setMessage({
               type: 'success',
-              text: 'Conta criada! Verifique o link de confirmação enviado ao seu e-mail.',
+              text: 'Conta criada com sucesso! Verifique o link de confirmação enviado ao seu e-mail.',
             });
           }
         } else {
@@ -118,6 +182,7 @@ const LoginPage: React.FC = () => {
             password,
           });
           if (error) throw error;
+          navigate('/app/today', { replace: true });
         }
       }
     } catch (err: unknown) {
@@ -135,13 +200,23 @@ const LoginPage: React.FC = () => {
     navigate('/app/today');
   };
 
+  const getStrengthLabel = () => {
+    if (strengthScore <= 1) return { text: 'Fraca', color: 'text-rose-400', bg: 'bg-rose-500' };
+    if (strengthScore === 2) return { text: 'Razoável', color: 'text-amber-400', bg: 'bg-amber-500' };
+    if (strengthScore === 3) return { text: 'Boa', color: 'text-sky-400', bg: 'bg-sky-500' };
+    return { text: 'Forte (Pronta)', color: 'text-[#88C0A8]', bg: 'bg-[#88C0A8]' };
+  };
+
+  const strength = getStrengthLabel();
+
   return (
     <div className="relative min-h-screen bg-[#090B0E] text-slate-100 flex flex-col items-center justify-center px-4 py-10 overflow-hidden">
       {/* Orbe difusa central com respiração de 8s */}
       <div
         className="absolute top-1/2 left-1/2 w-[560px] h-[560px] rounded-full pointer-events-none animate-orb-breathe blur-[110px]"
         style={{
-          background: 'radial-gradient(circle, rgba(136,192,168,0.35) 0%, rgba(86,157,170,0.22) 45%, rgba(9,11,14,0) 70%)',
+          background:
+            'radial-gradient(circle, rgba(136,192,168,0.35) 0%, rgba(86,157,170,0.22) 45%, rgba(9,11,14,0) 70%)',
         }}
         aria-hidden="true"
       />
@@ -159,7 +234,7 @@ const LoginPage: React.FC = () => {
           <CadenceLogo size={36} subtitle="Cognitive Capacity Engineering" />
         </Link>
 
-        <div className="w-full max-w-[420px] rounded-3xl border border-white/10 bg-[rgba(18,24,32,0.75)] backdrop-blur-3xl p-7 shadow-[0_30px_80px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.12)]">
+        <div className="w-full max-w-[440px] rounded-3xl border border-white/10 bg-[rgba(18,24,32,0.75)] backdrop-blur-3xl p-7 shadow-[0_30px_80px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.12)]">
           {/* Toggle Dual: Acessar Conta vs Criar Nova Conta */}
           <div className="grid grid-cols-2 p-1 mb-5 rounded-2xl bg-black/40 border border-white/10 font-mono text-xs">
             <button
@@ -250,8 +325,8 @@ const LoginPage: React.FC = () => {
                   showEmailError
                     ? 'border-rose-500/60 focus:border-rose-400'
                     : isEmailValid
-                      ? 'border-[#88C0A8]/50 focus:border-[#88C0A8]'
-                      : 'border-white/10 focus:border-[#88C0A8]/60'
+                    ? 'border-[#88C0A8]/50 focus:border-[#88C0A8]'
+                    : 'border-white/10 focus:border-[#88C0A8]/60'
                 }`}
               />
               {showEmailError && (
@@ -260,22 +335,93 @@ const LoginPage: React.FC = () => {
             </div>
 
             {method === 'password' && (
-              <div className="space-y-1.5">
-                <label htmlFor="login-password" className="flex items-center gap-1.5 text-xs text-[#94A3B8]">
-                  <Lock className="w-3.5 h-3.5" />
-                  {mode === 'signup' ? 'Crie uma Senha (mín. 6 caracteres)' : 'Senha'}
-                </label>
-                <input
-                  id="login-password"
-                  type="password"
-                  autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  minLength={6}
-                  className="w-full h-11 rounded-xl bg-black/30 border border-white/10 px-3.5 text-sm text-slate-100 placeholder:text-slate-600 focus:outline-none focus:border-[#88C0A8]/60 transition-colors"
-                />
-              </div>
+              <>
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label htmlFor="login-password" className="flex items-center gap-1.5 text-xs text-[#94A3B8]">
+                      <Lock className="w-3.5 h-3.5" />
+                      {mode === 'signup' ? 'Senha' : 'Senha'}
+                    </label>
+                    {mode === 'signup' && password.length > 0 && (
+                      <span className={`text-[10px] font-mono ${strength.color}`}>
+                        Força: {strength.text}
+                      </span>
+                    )}
+                  </div>
+                  <input
+                    id="login-password"
+                    type="password"
+                    autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full h-11 rounded-xl bg-black/30 border border-white/10 px-3.5 text-sm text-slate-100 placeholder:text-slate-600 focus:outline-none focus:border-[#88C0A8]/60 transition-colors font-mono"
+                  />
+
+                  {/* Indicador de Força de Senha no Cadastro */}
+                  {mode === 'signup' && password.length > 0 && (
+                    <div className="pt-1 space-y-2">
+                      <div className="flex gap-1.5 h-1 w-full bg-white/5 rounded-full overflow-hidden">
+                        {[1, 2, 3, 4].map((step) => (
+                          <div
+                            key={step}
+                            className={`flex-1 rounded-full transition-all duration-300 ${
+                              strengthScore >= step ? strength.bg : 'bg-transparent'
+                            }`}
+                          />
+                        ))}
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-1.5 text-[10px] font-mono pt-1 text-slate-400">
+                        <span className={`flex items-center gap-1 ${hasMinLength ? 'text-[#88C0A8]' : 'text-slate-500'}`}>
+                          {hasMinLength ? <Check className="w-3 h-3" /> : <XIcon className="w-3 h-3" />}
+                          8+ caracteres
+                        </span>
+                        <span className={`flex items-center gap-1 ${hasUppercase ? 'text-[#88C0A8]' : 'text-slate-500'}`}>
+                          {hasUppercase ? <Check className="w-3 h-3" /> : <XIcon className="w-3 h-3" />}
+                          1 maiúscula
+                        </span>
+                        <span className={`flex items-center gap-1 ${hasNumber ? 'text-[#88C0A8]' : 'text-slate-500'}`}>
+                          {hasNumber ? <Check className="w-3 h-3" /> : <XIcon className="w-3 h-3" />}
+                          1 número
+                        </span>
+                        <span className={`flex items-center gap-1 ${hasSymbol ? 'text-[#88C0A8]' : 'text-slate-500'}`}>
+                          {hasSymbol ? <Check className="w-3 h-3" /> : <XIcon className="w-3 h-3" />}
+                          1 símbolo (!@#$)
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Campo Confirmar Senha */}
+                {mode === 'signup' && (
+                  <div className="space-y-1.5 pt-1">
+                    <label htmlFor="confirm-password" className="flex items-center gap-1.5 text-xs text-[#94A3B8]">
+                      <ShieldCheck className="w-3.5 h-3.5" />
+                      Confirmar Senha
+                    </label>
+                    <input
+                      id="confirm-password"
+                      type="password"
+                      autoComplete="new-password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="Repita sua senha exatamente"
+                      className={`w-full h-11 rounded-xl bg-black/30 border px-3.5 text-sm text-slate-100 placeholder:text-slate-600 focus:outline-none transition-colors font-mono ${
+                        confirmPassword.length > 0
+                          ? passwordsMatch
+                            ? 'border-[#88C0A8]/60 focus:border-[#88C0A8]'
+                            : 'border-rose-500/60 focus:border-rose-400'
+                          : 'border-white/10 focus:border-[#88C0A8]/60'
+                      }`}
+                    />
+                    {confirmPassword.length > 0 && !passwordsMatch && (
+                      <p className="text-[11px] text-rose-400 font-mono">As senhas não coincidem.</p>
+                    )}
+                  </div>
+                )}
+              </>
             )}
 
             <button
@@ -288,8 +434,12 @@ const LoginPage: React.FC = () => {
               ) : (
                 <>
                   {method === 'magic'
-                    ? (mode === 'signup' ? 'Criar Conta com Magic Link' : 'Enviar Magic Link')
-                    : (mode === 'signup' ? 'Criar Conta' : 'Entrar')}
+                    ? mode === 'signup'
+                      ? 'Criar Conta com Magic Link'
+                      : 'Enviar Magic Link'
+                    : mode === 'signup'
+                    ? 'Criar Conta'
+                    : 'Entrar'}
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}
@@ -303,7 +453,9 @@ const LoginPage: React.FC = () => {
               }}
               className="w-full text-center text-[11px] font-mono text-slate-500 hover:text-slate-300 transition-colors cursor-pointer"
             >
-              {method === 'magic' ? 'Prefere autenticar com senha?' : 'Prefere receber um Magic Link por e-mail?'}
+              {method === 'magic'
+                ? 'Prefere autenticar com senha?'
+                : 'Prefere receber um Magic Link por e-mail?'}
             </button>
           </form>
 

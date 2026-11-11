@@ -38,6 +38,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isDemo, setIsDemo] = useState<boolean>(readDemoFlag);
   const [isLoading, setIsLoading] = useState<boolean>(isSupabaseConfigured());
 
+  // Tratamento automático e suave de tokens retornados na URL (#access_token=... ou ?code=...)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const hash = window.location.hash;
+    const search = window.location.search;
+
+    const hasAccessToken = hash.includes('access_token=') || hash.includes('type=recovery');
+    const hasAuthCode = search.includes('code=');
+
+    if (hasAccessToken || hasAuthCode) {
+      // Se detectado token de Magic Link / OAuth na URL, redireciona suavemente para /app/today
+      if (isSupabaseConfigured()) {
+        supabaseClient.auth.getSession().then(({ data: { session } }) => {
+          if (session?.user) {
+            setUserState(session.user);
+            setIsLoading(false);
+            if (window.location.pathname !== '/app/today') {
+              window.history.replaceState(null, '', '/app/today');
+            }
+          }
+        });
+      }
+    }
+  }, []);
+
   useEffect(() => {
     if (!isSupabaseConfigured()) return;
 
@@ -50,9 +76,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const {
       data: { subscription },
-    } = supabaseClient.auth.onAuthStateChange((_event, session) => {
+    } = supabaseClient.auth.onAuthStateChange((event, session) => {
+      if (!isMounted) return;
       setUserState(session?.user ?? null);
       setIsLoading(false);
+
+      // Redirecionamento suave em login via link ou OAuth externo
+      if ((event === 'SIGNED_IN' || event === 'USER_UPDATED') && session?.user) {
+        if (window.location.hash.includes('access_token=')) {
+          window.history.replaceState(null, '', '/app/today');
+        }
+      }
     });
 
     return () => {

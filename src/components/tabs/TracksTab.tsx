@@ -31,6 +31,7 @@ interface TracksTabProps {
   tracks: StudyTrack[];
   blocks: EnrichedScheduleBlock[];
   onOpenCreateTrackModal: () => void;
+  onOpenImportCourseModal?: () => void;
   onUpdateTrack?: (updatedTrack: StudyTrack) => void;
   onDeleteTrack?: (trackId: string) => void;
   className?: string;
@@ -40,6 +41,7 @@ export const TracksTab: React.FC<TracksTabProps> = ({
   tracks,
   blocks,
   onOpenCreateTrackModal,
+  onOpenImportCourseModal,
   onUpdateTrack,
   onDeleteTrack,
   className = '',
@@ -196,14 +198,27 @@ export const TracksTab: React.FC<TracksTabProps> = ({
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={onOpenCreateTrackModal}
-          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-mono font-bold bg-[#88C0A8] hover:bg-[#9ad0b8] text-slate-950 shadow-[0_0_20px_rgba(136,192,168,0.2)] transition-all cursor-pointer self-start sm:self-auto"
-        >
-          <Plus className="w-3.5 h-3.5" />
-          <span>Nova Trilha com IA</span>
-        </button>
+        <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
+          {onOpenImportCourseModal && (
+            <button
+              type="button"
+              onClick={onOpenImportCourseModal}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-mono text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 transition-all cursor-pointer"
+            >
+              <BookOpen className="w-3.5 h-3.5 text-[#569DAA]" />
+              <span>+ Importar Curso Externo</span>
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={onOpenCreateTrackModal}
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-mono font-bold bg-[#88C0A8] hover:bg-[#9ad0b8] text-slate-950 shadow-[0_0_20px_rgba(136,192,168,0.2)] transition-all cursor-pointer"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Nova Trilha com IA</span>
+          </button>
+        </div>
       </div>
 
       {/* 2. Catálogo Visual de Trilhas com Design Vidro-Apple */}
@@ -217,17 +232,29 @@ export const TracksTab: React.FC<TracksTabProps> = ({
               Nenhuma trilha cadastrada
             </h3>
             <p className="text-xs text-slate-400 font-sans leading-relaxed">
-              Crie sua primeira disciplina para calcular sua cadência cognitiva e organizar sua linha de produção.
+              Crie sua primeira disciplina para calcular sua cadência cognitiva ou importe cursos da Udemy, Coursera ou Alura.
             </p>
           </div>
-          <button
-            type="button"
-            onClick={onOpenCreateTrackModal}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-mono text-xs font-bold bg-[#88C0A8] hover:bg-[#9ad0b8] text-slate-950 shadow-[0_0_25px_rgba(136,192,168,0.25)] transition-all cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Criar Primeira Trilha com IA</span>
-          </button>
+          <div className="flex items-center justify-center gap-3 flex-wrap">
+            <button
+              type="button"
+              onClick={onOpenCreateTrackModal}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-mono text-xs font-bold bg-[#88C0A8] hover:bg-[#9ad0b8] text-slate-950 shadow-[0_0_25px_rgba(136,192,168,0.25)] transition-all cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Criar Primeira Trilha com IA</span>
+            </button>
+            {onOpenImportCourseModal && (
+              <button
+                type="button"
+                onClick={onOpenImportCourseModal}
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full font-mono text-xs text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 transition-all cursor-pointer"
+              >
+                <BookOpen className="w-4 h-4 text-[#569DAA]" />
+                <span>Importar Curso Externo</span>
+              </button>
+            )}
+          </div>
         </div>
       ) : (
         <div className="space-y-4">

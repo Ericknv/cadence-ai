@@ -1,16 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   X,
   Sparkles,
-  Loader2,
   BookOpen,
   Brain,
   Layers,
-  Palette,
   AlertCircle,
   CheckCircle2,
-  Sliders,
-  Send,
+  Clock,
+  ShieldCheck,
+  Zap,
 } from 'lucide-react';
 import {
   StudyTrack,
@@ -21,6 +20,7 @@ import {
 } from '../../types/study';
 import { decomposeStudyTopic } from '../../services/geminiService';
 import { TODAY_DATE } from '../../mocks/study-data';
+import { CadenceLogo } from '../brand/CadenceLogo';
 
 interface CreateTrackModalProps {
   isOpen: boolean;
@@ -40,37 +40,55 @@ const CATEGORIES = [
 ];
 
 const COLOR_OPTIONS = [
+  { label: 'Sálvia Esmeralda', hex: '#88C0A8' },
+  { label: 'Azul Ciano', hex: '#569DAA' },
+  { label: 'Coral Deep Work', hex: '#FB7185' },
+  { label: 'Cinza Titânio', hex: '#A0AEC0' },
   { label: 'Sky Blue', hex: '#0284c7' },
-  { label: 'Emerald', hex: '#059669' },
-  { label: 'Indigo', hex: '#6366f1' },
-  { label: 'Amber', hex: '#d97706' },
-  { label: 'Rose', hex: '#e11d48' },
-  { label: 'Cyan', hex: '#0891b2' },
-  { label: 'Violet', hex: '#7c3aed' },
+  { label: 'Âmbar Dourado', hex: '#d97706' },
 ];
 
 const PRESET_TEMPLATES = [
+  {
+    title: 'Pesquisa Operacional I (UFAM)',
+    category: 'Pesquisa Operacional & Otimização',
+    text: `Modelagem de Programação Linear, formulação canônica de maximização e minimização, Algoritmo Simplex primal matricial, Teoria da Dualidade, folgas complementares e análise de sensibilidade pós-ótima.`,
+  },
   {
     title: 'Controle Estatístico de Processos (CEP)',
     category: 'Engenharia de Produção',
     text: `Capacidade de processo (Cp e Cpk), construção de gráficos de controle por variáveis (X-barra e R) e por atributos (p e c). Regras de Shewhart para causas especiais e análise de repetibilidade e reprodutibilidade (R&R Gauge).`,
   },
   {
-    title: 'Simulação de Monte Carlo & Teoria das Filas',
-    category: 'Engenharia de Produção',
-    text: `Distribuições de probabilidade contínuas e discretas em processos produtivos. Modelos de filas M/M/1 e M/M/s (Little's Law). Geração de números pseudoaleatórios, convergência de ensaios e intervalos de confiança na tomada de decisão.`,
+    title: 'Arquitetura de Microsserviços & Event-Driven',
+    category: 'Software & TI',
+    text: `Padrões de decomposição de monólitos, transações distribuídas (Saga Pattern), Event-Driven Architecture com Apache Kafka, idempotência de consumers e estratégias de observabilidade com OpenTelemetry.`,
+  },
+];
+
+const PIPELINE_STEPS = [
+  {
+    label: 'Analisando ementa e estrutura conceitual...',
+    sub: 'Varredura sintática e semântica de tópicos com Gemini 3.8 Flash',
   },
   {
-    title: 'Arquitetura de Microsserviços e Mensageria',
-    category: 'Software & TI',
-    text: `Padrões de decomposição de monólitos, transações distribuídas (Saga Pattern), Event-Driven Architecture com Apache Kafka, idempotência de consumers e estratégias de observabilidade (OpenTelemetry e tracing distribuído).`,
+    label: 'Calculando densidade cognitiva e fatores humanos...',
+    sub: 'Taxonomia de esforço mental: Deep Work, Prática ou Revisão',
+  },
+  {
+    label: 'Fatiando em blocos atômicos de 30 a 60 min...',
+    sub: 'Decomposição pedagógica sem fadiga decisória com metas atômicas',
+  },
+  {
+    label: 'Balanceando agenda semanal com teto RCCP...',
+    sub: 'Alocação rítmica nos turnos respeitando capacidade fisiológica',
   },
 ];
 
 export const CreateTrackModal: React.FC<CreateTrackModalProps> = ({
   isOpen,
   onClose,
-  userId = 'usr_erick_nava',
+  userId = 'usr_guest',
   onTrackCreated,
 }) => {
   const [rawText, setRawText] = useState<string>('');
@@ -78,7 +96,22 @@ export const CreateTrackModal: React.FC<CreateTrackModalProps> = ({
   const [selectedColor, setSelectedColor] = useState<string>(COLOR_OPTIONS[0].hex);
   const [userLevel, setUserLevel] = useState<'Iniciante' | 'Intermediário' | 'Avançado'>('Intermediário');
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [currentStepIndex, setCurrentStepIndex] = useState<number>(0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Pipeline sequencial de telemetria durante o loading da IA
+  useEffect(() => {
+    if (!isLoading) {
+      setCurrentStepIndex(0);
+      return;
+    }
+
+    const timer = setInterval(() => {
+      setCurrentStepIndex((prev) => (prev < PIPELINE_STEPS.length - 1 ? prev + 1 : prev));
+    }, 1800);
+
+    return () => clearInterval(timer);
+  }, [isLoading]);
 
   if (!isOpen) return null;
 
@@ -95,7 +128,6 @@ export const CreateTrackModal: React.FC<CreateTrackModalProps> = ({
     try {
       const result = await decomposeStudyTopic(rawText, category, userLevel);
 
-      // Gerar UUIDs locais compatíveis
       const trackId = crypto.randomUUID ? crypto.randomUUID() : `trk_${Date.now()}`;
 
       const newTrack: StudyTrack = {
@@ -109,7 +141,6 @@ export const CreateTrackModal: React.FC<CreateTrackModalProps> = ({
         created_at: new Date().toISOString(),
       };
 
-      // Mapeamento sequencial para períodos do dia
       const periodsSequence: TargetPeriod[] = ['morning', 'afternoon', 'evening', 'night'];
 
       const createdBlocks: EnrichedScheduleBlock[] = result.sessions.map((sess, idx) => {
@@ -131,7 +162,6 @@ export const CreateTrackModal: React.FC<CreateTrackModalProps> = ({
           created_at: new Date().toISOString(),
         };
 
-        // Alocação inteligente: se esforço alto, preferir manhã; médio tarde; baixo noite
         let targetPeriod: TargetPeriod;
         if (sess.cognitive_effort === 'high') {
           targetPeriod = 'morning';
@@ -141,7 +171,6 @@ export const CreateTrackModal: React.FC<CreateTrackModalProps> = ({
           targetPeriod = 'evening';
         }
 
-        // Se houver mais de uma sessão com o mesmo período, distribuir pela sequência
         if (idx > 0 && idx < periodsSequence.length) {
           targetPeriod = periodsSequence[idx % periodsSequence.length];
         }
@@ -151,7 +180,7 @@ export const CreateTrackModal: React.FC<CreateTrackModalProps> = ({
 
         return {
           id: blockId,
-          user_id: 'usr_erick_nava',
+          user_id: userId,
           session_id: sessionId,
           target_date: TODAY_DATE,
           target_period: targetPeriod,
@@ -198,210 +227,265 @@ export const CreateTrackModal: React.FC<CreateTrackModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
-      <div className="bg-zinc-900 border border-zinc-750 rounded-xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
-        {/* Header do Modal */}
-        <div className="p-4 sm:p-5 border-b border-zinc-800 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-lg bg-blue-600/20 text-blue-400 border border-blue-500/30">
-              <Sparkles className="w-4 h-4" />
+    <div className="fixed inset-0 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+      {/* TELA DE LOADING CINEMATOGRÁFICA DA IA */}
+      {isLoading ? (
+        <div className="bg-[#090B0E]/95 border border-white/10 rounded-3xl max-w-lg w-full p-8 shadow-[0_30px_90px_rgba(0,0,0,0.8),inset_0_1px_0_rgba(255,255,255,0.1)] backdrop-blur-3xl space-y-6 relative overflow-hidden animate-in zoom-in-95 duration-300">
+          {/* Feixe de Luz Difusa Esmeralda de Fundo */}
+          <div
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-72 rounded-full pointer-events-none blur-[90px] opacity-40"
+            style={{ background: 'radial-gradient(circle, #88C0A8 0%, #569DAA 50%, transparent 70%)' }}
+            aria-hidden="true"
+          />
+
+          <div className="relative z-10 flex flex-col items-center text-center space-y-3">
+            <div className="relative">
+              <div className="w-16 h-16 rounded-full bg-[#88C0A8]/10 border border-[#88C0A8]/40 flex items-center justify-center shadow-[0_0_35px_rgba(136,192,168,0.3)] animate-pulse">
+                <CadenceLogo size={36} showText={false} />
+              </div>
             </div>
+
             <div>
-              <h2 className="text-base font-semibold text-zinc-100 flex items-center gap-2">
-                Decomposer Engine
-                <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-blue-950/80 text-blue-300 border border-blue-800">
-                  Gemini 3.8 Flash
-                </span>
-              </h2>
-              <p className="text-xs text-zinc-400">
-                Transforme ementas densas em sessões atômicas com dosagem cognitiva precisa
+              <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-[#88C0A8] bg-[#88C0A8]/10 px-3 py-1 rounded-full border border-[#88C0A8]/30">
+                Gemini 3.8 Flash // Decomposer Core
+              </span>
+              <h3 className="text-xl font-bold text-slate-100 font-display mt-2">
+                Fatiando Ementa com Inteligência
+              </h3>
+              <p className="text-xs text-slate-400 font-sans mt-0.5">
+                Construindo a linha de produção atômica para sua rotina.
               </p>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={isLoading}
-            className="text-zinc-500 hover:text-zinc-300 p-1.5 rounded-lg hover:bg-zinc-800 transition-colors cursor-pointer"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
 
-        {/* Formulário Principal */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
-          {errorMessage && (
-            <div className="p-3 rounded-lg bg-rose-950/40 border border-rose-800/60 text-xs text-rose-300 flex items-start gap-2">
-              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-              <div className="space-y-1">
-                <span className="font-semibold">Erro no processamento:</span>
-                <p>{errorMessage}</p>
-              </div>
-            </div>
-          )}
-
-          {/* Templates de Teste Rápido */}
-          <div>
-            <div className="text-[11px] font-mono uppercase tracking-wider text-zinc-400 mb-2 flex items-center gap-1.5">
-              <BookOpen className="w-3.5 h-3.5 text-zinc-500" />
-              <span>Exemplos Prontos de Ementas de Engenharia</span>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-              {PRESET_TEMPLATES.map((tpl, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  disabled={isLoading}
-                  onClick={() => applyTemplate(tpl)}
-                  className="text-left p-2 rounded-lg bg-zinc-950/60 hover:bg-zinc-800/80 border border-zinc-800 text-xs transition-colors cursor-pointer group"
-                >
-                  <div className="font-semibold text-zinc-300 group-hover:text-blue-300 truncate">
-                    {tpl.title}
-                  </div>
-                  <div className="text-[10px] text-zinc-500 font-mono">{tpl.category}</div>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Área de Texto da Ementa */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-mono text-zinc-300 flex items-center justify-between">
-              <span>Ementa, Roteiro ou Tópicos de Estudo</span>
-              <span className="text-[11px] text-zinc-500 font-mono">
-                {rawText.length} caracteres
-              </span>
-            </label>
-            <textarea
-              value={rawText}
-              onChange={(e) => setRawText(e.target.value)}
-              disabled={isLoading}
-              rows={4}
-              placeholder="Cole aqui a ementa da disciplina, tópicos de edital ou sumário do livro que você precisa dominar..."
-              className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-3 text-xs text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-blue-500 transition-colors font-mono leading-relaxed"
+          {/* Barra de Progresso Contínua e Elegante */}
+          <div className="relative z-10 w-full h-1.5 rounded-full bg-white/5 overflow-hidden border border-white/10">
+            <div
+              className="h-full bg-gradient-to-r from-[#88C0A8] via-[#569DAA] to-[#88C0A8] rounded-full transition-all duration-700 ease-out"
+              style={{ width: `${((currentStepIndex + 1) / PIPELINE_STEPS.length) * 100}%` }}
             />
           </div>
 
-          {/* Categoria e Nível de Proficiência */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-            <div className="space-y-1.5">
-              <label className="text-xs font-mono text-zinc-300 flex items-center gap-1.5">
-                <Layers className="w-3.5 h-3.5 text-zinc-400" />
-                <span>Categoria</span>
-              </label>
-              <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                disabled={isLoading}
-                className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-xs text-zinc-200 focus:outline-none focus:border-blue-500 transition-colors font-mono cursor-pointer"
-              >
-                {CATEGORIES.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat}
-                  </option>
-                ))}
-              </select>
-            </div>
+          {/* Pipeline de Etapas de Telemetria Sequencial */}
+          <div className="relative z-10 space-y-2.5 pt-1">
+            {PIPELINE_STEPS.map((step, idx) => {
+              const isPast = idx < currentStepIndex;
+              const isCurrent = idx === currentStepIndex;
 
-            <div className="space-y-1.5">
-              <label className="text-xs font-mono text-zinc-300 flex items-center gap-1.5">
-                <Sliders className="w-3.5 h-3.5 text-zinc-400" />
-                <span>Nível Inicial</span>
-              </label>
-              <div className="grid grid-cols-3 gap-1.5">
-                {(['Iniciante', 'Intermediário', 'Avançado'] as const).map((lvl) => (
-                  <button
-                    key={lvl}
-                    type="button"
-                    disabled={isLoading}
-                    onClick={() => setUserLevel(lvl)}
-                    className={`py-1.5 px-2 rounded text-[11px] font-mono border transition-colors cursor-pointer ${
-                      userLevel === lvl
-                        ? 'bg-blue-950/70 text-blue-300 border-blue-500/70 font-semibold'
-                        : 'bg-zinc-950 text-zinc-400 border-zinc-800 hover:border-zinc-700'
-                    }`}
-                  >
-                    {lvl}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Seletor de Cor da Trilha */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-mono text-zinc-300 flex items-center gap-1.5">
-              <Palette className="w-3.5 h-3.5 text-zinc-400" />
-              <span>Cor Identificadora da Trilha</span>
-            </label>
-            <div className="flex flex-wrap items-center gap-2">
-              {COLOR_OPTIONS.map((c) => (
-                <button
-                  key={c.hex}
-                  type="button"
-                  disabled={isLoading}
-                  onClick={() => setSelectedColor(c.hex)}
-                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-mono border transition-all cursor-pointer ${
-                    selectedColor === c.hex
-                      ? 'border-white text-white shadow-xs bg-zinc-800'
-                      : 'border-zinc-800 text-zinc-400 hover:border-zinc-700 bg-zinc-950'
+              return (
+                <div
+                  key={step.label}
+                  className={`flex items-start gap-3 p-3 rounded-2xl border transition-all duration-300 ${
+                    isCurrent
+                      ? 'bg-white/[0.04] border-[#88C0A8]/40 shadow-xs'
+                      : isPast
+                      ? 'bg-black/30 border-white/5 opacity-60'
+                      : 'border-transparent opacity-25'
                   }`}
                 >
-                  <span
-                    className="w-2.5 h-2.5 rounded-full"
-                    style={{ backgroundColor: c.hex }}
-                  />
-                  <span>{c.label}</span>
-                </button>
-              ))}
-            </div>
+                  <div className="mt-0.5 shrink-0">
+                    {isPast ? (
+                      <CheckCircle2 className="w-4 h-4 text-[#88C0A8]" />
+                    ) : isCurrent ? (
+                      <div className="w-4 h-4 rounded-full border-2 border-[#88C0A8] border-t-transparent animate-spin" />
+                    ) : (
+                      <div className="w-4 h-4 rounded-full border border-white/20" />
+                    )}
+                  </div>
+                  <div className="space-y-0.5 min-w-0">
+                    <p className={`text-xs font-mono font-medium truncate ${isCurrent ? 'text-slate-100' : 'text-slate-400'}`}>
+                      {step.label}
+                    </p>
+                    <p className="text-[10px] text-slate-500 font-sans truncate">
+                      {step.sub}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
           </div>
 
-          {/* Animação / Estado de Processamento da IA */}
-          {isLoading && (
-            <div className="p-4 rounded-lg bg-blue-950/30 border border-blue-800/40 space-y-2 animate-in fade-in duration-300">
-              <div className="flex items-center gap-2.5 text-blue-300 text-xs font-mono">
-                <Loader2 className="w-4 h-4 animate-spin text-blue-400" />
-                <span className="font-semibold">
-                  Decomposer Engine em execução via Gemini 3.8 Flash...
-                </span>
+          <div className="relative z-10 text-center font-mono text-[10px] text-slate-500 pt-2 border-t border-white/5">
+            Cadence AI · Rough-Cut Capacity Planning Engine
+          </div>
+        </div>
+      ) : (
+        /* FORMULÁRIO PRINCIPAL COM DESIGN VIDRO-APPLE */
+        <div className="bg-[#090B0E]/95 border border-white/10 rounded-3xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl backdrop-blur-3xl overflow-hidden animate-in zoom-in-95 duration-200">
+          {/* Header do Modal */}
+          <div className="p-5 sm:p-6 border-b border-white/10 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-[#88C0A8]/10 border border-[#88C0A8]/30 text-[#88C0A8] flex items-center justify-center shadow-[0_0_15px_rgba(136,192,168,0.2)]">
+                <Sparkles className="w-5 h-5" />
               </div>
-              <p className="text-[11px] text-zinc-400 font-sans leading-relaxed">
-                Analisando complexidade conceitual, calibrando durações (30 a 90 min) e fatiando objetivos de aprendizagem com taxonomia estrita.
-              </p>
+              <div>
+                <h2 className="text-base font-bold text-slate-100 font-display flex items-center gap-2">
+                  Decomposer Engine
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#88C0A8]/10 text-[#88C0A8] border border-[#88C0A8]/20">
+                    Gemini 3.8 Flash
+                  </span>
+                </h2>
+                <p className="text-xs text-slate-400 font-mono mt-0.5">
+                  Transforme ementas densas em sessões atômicas com dosagem cognitiva precisa
+                </p>
+              </div>
             </div>
-          )}
-
-          {/* Footer com Ações */}
-          <div className="pt-3 border-t border-zinc-800 flex items-center justify-end gap-2.5">
             <button
               type="button"
               onClick={onClose}
               disabled={isLoading}
-              className="px-3 py-1.5 rounded-lg text-xs font-mono text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition-colors cursor-pointer"
+              className="text-slate-400 hover:text-slate-200 p-1.5 rounded-full hover:bg-white/5 transition-colors cursor-pointer"
+              aria-label="Fechar"
             >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 disabled:bg-blue-800/50 text-white text-xs font-semibold shadow-sm transition-colors cursor-pointer"
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  <span>Decompondo Ementa...</span>
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>Gerar Trilha com IA</span>
-                </>
-              )}
+              <X className="w-4 h-4" />
             </button>
           </div>
-        </form>
-      </div>
+
+          {/* Formulário Principal */}
+          <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4">
+            {errorMessage && (
+              <div className="p-3.5 rounded-2xl bg-rose-950/40 border border-rose-500/30 text-xs text-rose-300 flex items-start gap-2.5 font-mono">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-400" />
+                <div className="space-y-0.5">
+                  <span className="font-bold">Aviso no processamento:</span>
+                  <p>{errorMessage}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Exemplos Prontos */}
+            <div>
+              <div className="text-[10px] font-mono uppercase tracking-wider text-slate-400 mb-2 flex items-center gap-1.5">
+                <BookOpen className="w-3.5 h-3.5 text-slate-500" />
+                <span>Exemplos Prontos de Ementas de Engenharia</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                {PRESET_TEMPLATES.map((tpl, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    disabled={isLoading}
+                    onClick={() => applyTemplate(tpl)}
+                    className="text-left p-2.5 rounded-2xl bg-white/[0.02] hover:bg-white/5 border border-white/5 hover:border-white/15 text-xs transition-colors cursor-pointer group space-y-1"
+                  >
+                    <div className="font-semibold text-slate-300 group-hover:text-[#88C0A8] truncate font-mono">
+                      {tpl.title}
+                    </div>
+                    <div className="text-[10px] text-slate-500 truncate font-mono">
+                      {tpl.category}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Campo da Ementa */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-mono text-slate-300 flex items-center justify-between">
+                <span>Ementa, Conteúdo Programático ou Tópicos de Estudo</span>
+                <span className="text-[11px] text-slate-500 font-mono">
+                  {rawText.length} caracteres
+                </span>
+              </label>
+              <textarea
+                value={rawText}
+                onChange={(e) => setRawText(e.target.value)}
+                placeholder="Cole aqui a ementa da disciplina, tópicos de um livro, edital ou grade curricular..."
+                rows={5}
+                required
+                className="w-full bg-black/40 border border-white/10 rounded-2xl p-3 text-xs text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-[#88C0A8] transition-colors font-mono leading-relaxed"
+              />
+            </div>
+
+            {/* Categoria e Nível */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <label className="text-xs font-mono text-slate-300 flex items-center gap-1.5">
+                  <Layers className="w-3.5 h-3.5 text-slate-400" />
+                  <span>Área / Categoria</span>
+                </label>
+                <select
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  className="w-full bg-[#0E1319] border border-white/10 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-[#88C0A8] font-mono cursor-pointer"
+                >
+                  {CATEGORIES.map((cat) => (
+                    <option key={cat} value={cat}>
+                      {cat}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-mono text-slate-300 flex items-center gap-1.5">
+                  <Brain className="w-3.5 h-3.5 text-slate-400" />
+                  <span>Nível de Domínio Atual</span>
+                </label>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {(['Iniciante', 'Intermediário', 'Avançado'] as const).map((lvl) => (
+                    <button
+                      key={lvl}
+                      type="button"
+                      onClick={() => setUserLevel(lvl)}
+                      className={`py-2 rounded-xl text-xs font-mono transition-colors cursor-pointer border ${
+                        userLevel === lvl
+                          ? 'bg-[#88C0A8]/20 text-[#88C0A8] border-[#88C0A8]/40 font-semibold'
+                          : 'bg-white/[0.02] text-slate-400 border-white/5 hover:border-white/15'
+                      }`}
+                    >
+                      {lvl}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Cor de Identificação */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-mono text-slate-300">Cor de Acento da Trilha</label>
+              <div className="flex items-center gap-2 flex-wrap">
+                {COLOR_OPTIONS.map((c) => (
+                  <button
+                    key={c.hex}
+                    type="button"
+                    onClick={() => setSelectedColor(c.hex)}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-mono border transition-all cursor-pointer ${
+                      selectedColor === c.hex
+                        ? 'border-white text-white font-bold bg-white/10'
+                        : 'border-white/10 bg-white/[0.02] text-slate-400 hover:border-white/20'
+                    }`}
+                  >
+                    <span
+                      className="w-2.5 h-2.5 rounded-full"
+                      style={{ backgroundColor: c.hex }}
+                    />
+                    <span>{c.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Footer com Ações */}
+            <div className="pt-3 border-t border-white/10 flex items-center justify-end gap-2.5">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 rounded-full text-xs font-mono text-slate-400 hover:text-slate-200 cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-mono text-xs font-bold bg-[#88C0A8] hover:bg-[#9ad0b8] text-slate-950 shadow-[0_0_25px_rgba(136,192,168,0.25)] transition-all cursor-pointer"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Gerar Trilha com IA</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 };

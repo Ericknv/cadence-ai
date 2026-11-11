@@ -14,6 +14,8 @@ import { TracksTab } from '../../components/tabs/TracksTab';
 import { PlannerTab } from '../../components/tabs/PlannerTab';
 import { InsightsTab } from '../../components/tabs/InsightsTab';
 import { CreateTrackModal } from '../../components/modals/CreateTrackModal';
+import { ImportExternalCourseModal } from '../../components/modals/ImportExternalCourseModal';
+import { StudentProfileModal, StudentProfile } from '../../components/modals/StudentProfileModal';
 import { RebalanceModal } from '../../components/modals/RebalanceModal';
 import { AuthModal } from '../../components/auth/AuthModal';
 import { useAuth } from '../../lib/auth';
@@ -78,6 +80,8 @@ export default function CockpitApp() {
 
   const [selectedDate, setSelectedDate] = useState<string>(TODAY_DATE);
   const [isCreateTrackOpen, setIsCreateTrackOpen] = useState<boolean>(false);
+  const [isImportCourseOpen, setIsImportCourseOpen] = useState<boolean>(false);
+  const [isProfileOpen, setIsProfileOpen] = useState<boolean>(false);
   const [isRebalanceOpen, setIsRebalanceOpen] = useState<boolean>(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
   const [successBanner, setSuccessBanner] = useState<string | null>(null);
@@ -93,7 +97,6 @@ export default function CockpitApp() {
     let isMounted = true;
 
     if (user?.id) {
-      // Usuário real autenticado: busca no Supabase
       Promise.all([
         fetchUserScheduleBlocks(selectedDate, user.id),
         fetchUserTracks(user.id),
@@ -103,7 +106,6 @@ export default function CockpitApp() {
         setTracks(remoteTracks);
       });
     } else {
-      // Modo demonstração (visitante)
       const demoData = loadStoredData(undefined, true);
       setBlocks(demoData.blocks);
       setTracks(demoData.tracks);
@@ -203,6 +205,33 @@ export default function CockpitApp() {
 
     setSuccessBanner(
       `Trilha "${newTrack.title}" gerada com sucesso! ${newBlocks.length} sessões incorporadas.`
+    );
+    setTimeout(() => {
+      setSuccessBanner(null), 6000;
+    }, 6000);
+  };
+
+  const handleCourseImported = async (
+    newBlocks: EnrichedScheduleBlock[],
+    track: StudyTrack
+  ) => {
+    saveTrack(track, user?.id);
+    setTracks((prev) => [track, ...prev.filter((t) => t.id !== track.id)]);
+    setBlocks((prev) => {
+      const updated = [...newBlocks, ...prev];
+      saveBlocks(updated, user?.id);
+      return updated;
+    });
+
+    const sessions = newBlocks.map((b) => b.session);
+    try {
+      await persistNewTrackAndSessions(track, sessions, selectedDate, user?.id);
+    } catch (err) {
+      console.warn('[Sync Course Warning]: Falha ao persistir no Supabase, dados salvos localmente.', err);
+    }
+
+    setSuccessBanner(
+      `Curso "${track.title}" importado com sucesso! ${newBlocks.length} blocos atômicos gerados e distribuídos.`
     );
     setTimeout(() => {
       setSuccessBanner(null);
@@ -307,7 +336,7 @@ export default function CockpitApp() {
 
   return (
     <div className="min-h-screen bg-[#090B0E] text-slate-100 flex flex-col font-sans selection:bg-emerald-500 selection:text-black relative overflow-x-hidden">
-      {/* Glow Orbs Difusos de Fundo (Física da Luz - Dark Liquid Slate) */}
+      {/* Glow Orbs Difusos de Fundo */}
       <div className="fixed -top-40 -left-40 w-96 h-96 bg-sky-500/5 blur-[140px] rounded-full pointer-events-none z-0" />
       <div className="fixed -bottom-40 -right-40 w-96 h-96 bg-emerald-500/5 blur-[160px] rounded-full pointer-events-none z-0" />
 
@@ -318,6 +347,7 @@ export default function CockpitApp() {
         rccpPercentage={rccpRate}
         user={user}
         onOpenAuthModal={() => setIsAuthModalOpen(true)}
+        onOpenProfile={() => setIsProfileOpen(true)}
         onSignOut={handleSignOut}
       />
 
@@ -356,6 +386,7 @@ export default function CockpitApp() {
               tracks={tracks}
               blocks={blocks}
               onOpenCreateTrackModal={() => setIsCreateTrackOpen(true)}
+              onOpenImportCourseModal={() => setIsImportCourseOpen(true)}
               onUpdateTrack={handleUpdateTrack}
               onDeleteTrack={handleDeleteTrack}
             />
@@ -468,6 +499,27 @@ export default function CockpitApp() {
         onClose={() => setIsCreateTrackOpen(false)}
         userId={user?.id}
         onTrackCreated={handleTrackCreated}
+      />
+
+      {/* Modal de Ingestão de Cursos Externos */}
+      <ImportExternalCourseModal
+        isOpen={isImportCourseOpen}
+        onClose={() => setIsImportCourseOpen(false)}
+        existingTracks={tracks}
+        userId={user?.id}
+        onCourseImported={handleCourseImported}
+      />
+
+      {/* Drawer/Modal de Perfil do Estudante */}
+      <StudentProfileModal
+        isOpen={isProfileOpen}
+        onClose={() => setIsProfileOpen(false)}
+        user={user}
+        tracks={tracks}
+        onProfileUpdated={(updatedProfile: StudentProfile) => {
+          setSuccessBanner(`Metas de ${updatedProfile.fullName} atualizadas: ${(updatedProfile.dailyCapacityMinutes / 60).toFixed(1)}h diárias.`);
+          setTimeout(() => setSuccessBanner(null), 5000);
+        }}
       />
 
       {/* Modal de Rebalanceamento Semanal & Proteção contra Burnout */}

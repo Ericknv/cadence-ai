@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { User as UserIcon } from 'lucide-react';
 import type { User } from '@supabase/supabase-js';
 import { CadenceLogo } from '../brand/CadenceLogo';
 
@@ -9,6 +10,7 @@ interface TopFloatingDockProps {
   rccpPercentage?: number;
   user?: User | null;
   onOpenAuthModal?: () => void;
+  onOpenProfile?: () => void;
   onSignOut?: () => void;
 }
 
@@ -18,6 +20,7 @@ export const TopFloatingDock: React.FC<TopFloatingDockProps> = ({
   rccpPercentage = 88,
   user,
   onOpenAuthModal,
+  onOpenProfile,
   onSignOut,
 }) => {
   const tabs = [
@@ -27,11 +30,14 @@ export const TopFloatingDock: React.FC<TopFloatingDockProps> = ({
     { id: 'insights', label: 'Métricas' },
   ] as const;
 
+  // Iniciais do usuário para o avatar
+  const userInitial = user?.email ? user.email.charAt(0).toUpperCase() : 'E';
+
   return (
     <header className="fixed top-5 left-1/2 -translate-x-1/2 z-50 w-full max-w-fit px-4 pointer-events-auto">
-      <nav className="flex items-center gap-2.5 sm:gap-4 px-3.5 py-2 bg-[#090B0E]/70 backdrop-blur-2xl border border-white/10 rounded-full shadow-[0_20px_50px_rgba(0,0,0,0.8)]">
+      <nav className="flex items-center gap-2 sm:gap-3.5 px-3.5 py-2 bg-[#090B0E]/70 backdrop-blur-2xl border border-white/10 rounded-full shadow-[0_20px_50px_rgba(0,0,0,0.8),inset_0_1px_0_rgba(255,255,255,0.08)]">
         {/* Zona 1: Marca & Símbolo */}
-        <div className="pr-2 sm:pr-3.5 border-r border-white/10 shrink-0">
+        <div className="pr-2 sm:pr-3 border-r border-white/10 shrink-0">
           <Link to="/" aria-label="Voltar ao site institucional" className="block">
             <CadenceLogo size={26} showText={true} />
           </Link>
@@ -58,15 +64,32 @@ export const TopFloatingDock: React.FC<TopFloatingDockProps> = ({
           })}
         </div>
 
-        {/* Zona 3: Indicador de Capacidade RCCP & Auth */}
-        <div className="flex items-center gap-2 pl-2 sm:pl-3.5 border-l border-white/10 shrink-0">
+        {/* Zona 3: Indicador RCCP + Perfil do Estudante + Auth */}
+        <div className="flex items-center gap-2 pl-2 sm:pl-3 border-l border-white/10 shrink-0">
           <div
-            className="flex items-center gap-1.5 font-mono text-[11px] text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20"
+            className="flex items-center gap-1.5 font-mono text-[11px] text-[#88C0A8] bg-[#88C0A8]/10 px-2.5 py-1 rounded-full border border-[#88C0A8]/20"
             title="Rough-Cut Capacity Planning: Taxa de Ocupação da Semana"
           >
-            <span className="text-[9px] uppercase tracking-wider text-emerald-400/80">RCCP</span>
+            <span className="text-[9px] uppercase tracking-wider text-[#88C0A8]/80">RCCP</span>
             <span className="font-bold">{rccpPercentage}%</span>
           </div>
+
+          {/* Botão de Perfil do Estudante */}
+          {onOpenProfile && (
+            <button
+              type="button"
+              onClick={onOpenProfile}
+              className="w-7 h-7 rounded-full bg-white/5 hover:bg-white/15 border border-white/10 flex items-center justify-center text-xs font-mono text-slate-300 transition-colors cursor-pointer"
+              title="Ver Perfil do Estudante e Metas de Capacidade"
+              aria-label="Perfil do Estudante"
+            >
+              {user ? (
+                <span className="font-bold text-[#88C0A8]">{userInitial}</span>
+              ) : (
+                <UserIcon className="w-3.5 h-3.5 text-slate-400" />
+              )}
+            </button>
+          )}
 
           {onOpenAuthModal && (
             <button
